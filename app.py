@@ -2,43 +2,58 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
-import pandas as pd
 import dash.dash_table as dt
+import pandas as pd
+import psycopg2
+
+# Função para obter os dados do banco de dados PostgreSQL
+def fetch_data():
+    # Conexão ao banco de dados PostgreSQL
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user="postgres",
+        password="postgres",
+        host="localhost",
+        port="5432"
+    )
+
+    # Consulta SQL para obter os dados da tabela 'clientes'
+    query = """
+    SELECT codigo_finacap, cliente_ativo, nome_cliente, gestor, suitability_cliente,
+           perfil_risco_ips, tipo_ips, patrimonio
+    FROM clientes;
+    """
+
+    # Carregando os dados na tabela 'clientes' em um DataFrame
+    df = pd.read_sql(query, conn)
+
+    # Fechar a conexão com o banco de dados
+    conn.close()
+
+    return df
+
 
 # Inicializando a aplicação Dash com controle de rotas
 app = dash.Dash(__name__)
 app.title = "Dashboard Finacap"
 app.config.suppress_callback_exceptions = True
 
-# Simulando um dataset para o Dashboard
-df = pd.DataFrame(
-    {
-        "Código Finacap": [1001, 1002, 1003, 1004],
-        "CLIENTE ATIVO": ["Sim", "Não", "Sim", "Sim"],
-        "Nome do Cliente": [
-            "João Silva",
-            "Maria Oliveira",
-            "Carlos Santos",
-            "Ana Souza",
-        ],
-        "Gestor": ["Gestor A", "Gestor B", "Gestor A", "Gestor C"],
-        "Suitability Cliente": ["Conservador", "Moderado", "Agressivo", "Moderado"],
-        "Perfil de Risco (IPS)": [3, 5, 7, 4],
-        "TIPO IPS": ["Fundo", "Ação", "Fundo", "CDB"],
-        "Patrimônio": [150000, 200000, 300000, 100000],
-    }
-)
+# Carregar os dados do banco de dados
+df = fetch_data()
+
+# Corrigir valores e evitar erro de KeyError
+df['cliente_ativo'] = df['cliente_ativo'].str.strip().str.capitalize()
+
+# Converter a coluna 'perfil_risco_ips' para valores numéricos
+df['perfil_risco_ips'] = pd.to_numeric(df['perfil_risco_ips'], errors='coerce')
 
 # Gráficos
-fig_pie = px.pie(
-    df,
-    names="Suitability Cliente",
-    values="Patrimônio",
-    title="Distribuição de Patrimônio por Suitability",
-)
-fig_bar = px.bar(
-    df, x="Nome do Cliente", y="Patrimônio", title="Patrimônio por Cliente"
-)
+
+# PL Atual: Gráfico de Pizza
+fig_pie = px.pie(df, names="suitability_cliente", values="patrimonio", title="Distribuição de Patrimônio por Suitability")
+
+# Clientes: Gráfico de Barras
+fig_bar = px.bar(df, x="nome_cliente", y="patrimonio", title="Patrimônio por Cliente")
 
 # Sidebar com links para navegação
 sidebar = html.Div(
@@ -48,9 +63,7 @@ sidebar = html.Div(
         html.Hr(),
         dcc.Link("Clientes Ativos", href="/clientes-ativos", className="menu-item"),
         dcc.Link("Patrimônio Total", href="/patrimonio-total", className="menu-item"),
-        dcc.Link(
-            "Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"
-        ),
+        dcc.Link("Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"),
         dcc.Link("Configurações", href="/configuracoes", className="menu-item"),
         dcc.Link("Sair", href="/sair", className="menu-item"),
     ],
@@ -66,28 +79,28 @@ clientes_ativos_page = html.Div(
             [
                 html.Div(
                     [
-                        html.H3(f"{df['CLIENTE ATIVO'].value_counts()['Sim']}"),
+                        html.H3(f"{df['cliente_ativo'].value_counts().get('Sim', 0)}"),
                         html.P("Clientes Ativos"),
                     ],
                     className="card",
                 ),
                 html.Div(
                     [
-                        html.H3(f"R$ {df['Patrimônio'].sum():,.2f}"),
+                        html.H3(f"R$ {df['patrimonio'].sum():,.2f}"),
                         html.P("Patrimônio Total"),
                     ],
                     className="card",
                 ),
                 html.Div(
                     [
-                        html.H3(f"{len(df[df['Perfil de Risco (IPS)'] > 4])}"),
+                        html.H3(f"{len(df[df['perfil_risco_ips'] > 4])}"),
                         html.P("Revisões Pendentes"),
                     ],
                     className="card",
                 ),
                 html.Div(
                     [
-                        html.H3(f"{df['Perfil de Risco (IPS)'].mean():.1f}"),
+                        html.H3(f"{df['perfil_risco_ips'].mean():.1f}"),
                         html.P("Exposição CP Média"),
                     ],
                     className="card",
@@ -112,7 +125,7 @@ clientes_ativos_page = html.Div(
                     columns=[{"name": col, "id": col} for col in df.columns],
                     data=df.to_dict("records"),
                     style_table={"overflowX": "auto"},
-                    style_header={ 
+                    style_header={
                         "backgroundColor": "#1b51b1",
                         "color": "white",
                         "fontWeight": "bold",
@@ -132,7 +145,7 @@ patrimonio_total_page = html.Div(
     [
         html.H3("Patrimônio Total"),
         html.Div(
-            [html.H3(f"R$ {df['Patrimônio'].sum():,.2f}"), html.P("Patrimônio Total")],
+            [html.H3(f"R$ {df['patrimonio'].sum():,.2f}"), html.P("Patrimônio Total")],
             className="card",
         ),
         dcc.Graph(figure=fig_pie),
@@ -145,7 +158,7 @@ revisoes_pendentes_page = html.Div(
         html.H3("Revisões Pendentes"),
         html.Div(
             [
-                html.H3(f"{len(df[df['Perfil de Risco (IPS)'] > 4])}"),
+                html.H3(f"{len(df[df['perfil_risco_ips'] > 4])}"),
                 html.P("Revisões Pendentes"),
             ],
             className="card",
