@@ -1,0 +1,61 @@
+/* Fundo da tela */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1b1b32; /* ou outro tom de azul marinho desejado */
+}
+
+/* Container principal para centralizar a caixa */
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Caixa branca onde fica o formulário */
+.auth-box {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    width: 300px;
+    text-align: center;
+}
+
+/* Título dentro da caixa */
+.title {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Campo de entrada (token) */
+.input-field {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Botão de enviar */
+.button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #E91E63; /* cor que você preferir */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #d81b60;
+}
+
+/* Mensagem de status de erro ou sucesso */
+.status-message {
+    margin-top: 15px;
+    font-weight: bold;
+}
