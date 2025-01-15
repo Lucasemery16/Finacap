@@ -21,6 +21,7 @@
 .title {
   text-align: center;
   font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .menu-item {
@@ -28,6 +29,10 @@
   margin: 10px 0;
   cursor: pointer;
   transition: 0.3s;
+  text-align: center;
+  display: block; /* Garante que cada item fique em uma linha */
+  width: 100%;
+  padding: 10px 0;
 }
 
 .menu-item:hover {
