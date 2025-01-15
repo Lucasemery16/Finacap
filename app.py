@@ -89,6 +89,13 @@ clientes_ativos_page = html.Div(
 )
 
 # Layout da Página de Clientes com a Tabela
+# Removida a paginação e adicionado overflowY para rolagem
+
+
+
+
+
+
 tabela_clientes_page = html.Div(
     [
         html.H3("Tabela de Clientes", className="table-title"),
@@ -96,7 +103,7 @@ tabela_clientes_page = html.Div(
             id="clientes-table",
             columns=[{"name": col, "id": col} for col in df.columns],
             data=df.to_dict("records"),
-            style_table={"overflowX": "auto"},
+            style_table={"overflowX": "auto", "overflowY": "scroll", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
                 "color": "white",
@@ -104,8 +111,7 @@ tabela_clientes_page = html.Div(
                 "textAlign": "center",
             },
             style_cell={"textAlign": "center", "padding": "10px"},
-            style_data={"border": "1px solid #cbd6e2"},
-            page_size=10,
+            style_data={"border": "1px solid #cbd6e2"}
         ),
     ],
     className="table-container",
