@@ -1,0 +1,98 @@
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 250px;
+  padding: 20px;
+  background-color: #1b61b6;
+  color: white;
+  border-right: 1px solid #cbd6e2;
+  box-shadow: 0 1px 5px #eaf0f6;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.logo {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.title {
+  text-align: center;
+  font-size: 24px;
+}
+
+.menu-item {
+  color: white;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.menu-item:hover {
+  text-decoration: underline;
+}
+
+/* Conteúdo Principal */
+.content {
+  margin-left: 270px;
+  padding: 20px;
+  background: #fff;
+  color: #33475b;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Cards de Métricas */
+.cards-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #f8f9fa;
+  border: 1px solid #cbd6e2;
+  box-shadow: 0 1px 5px #eaf0f6;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  width: 24%;
+}
+
+/* Gráficos */
+.graphs-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.graph {
+  width: 48%;
+}
+
+/* Tabela */
+.table-container {
+  margin-top: 20px;
+}
+
+.table-title {
+  color: #1b61b6;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  background: #1b61b6;
+  color: white;
+  padding: 10px;
+}
+
+.table-data {
+  padding: 10px;
+  border: 1px solid #cbd6e2;
+}
