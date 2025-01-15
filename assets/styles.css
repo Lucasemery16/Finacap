@@ -6,7 +6,7 @@
   bottom: 0;
   width: 250px;
   padding: 20px;
-  background-color: #1b61b6;
+  background-color: #001a5f;
   color: white;
   border-right: 1px solid #cbd6e2;
   box-shadow: 0 1px 5px #eaf0f6;
@@ -87,7 +87,7 @@
 }
 
 .table-header {
-  background: #1b61b6;
+  background: #1b51b1;
   color: white;
   padding: 10px;
 }
