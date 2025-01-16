@@ -13,7 +13,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="@QWEasd132",
         host="localhost",
         port="5432"
     )
@@ -87,6 +87,7 @@ sidebar = html.Div(
         dcc.Link("Clientes", href="/clientes", className="menu-item"),
         dcc.Link("Patrimônio Total", href="/patrimonio-total", className="menu-item"),
         dcc.Link("Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"),
+        dcc.Link("Relatório Gerencial Carteiras", href="/relatorio-gerencial", className="menu-item"),  # Nova aba
         dcc.Link("Configurações", href="/configuracoes", className="menu-item"),
         dcc.Link("Sair", href="/sair", className="menu-item"),
         html.Button("Atualizar Dados", id="update-data-btn", className="update-button"),
@@ -100,19 +101,19 @@ clientes_ativos_page = html.Div(
         html.H3("Clientes Ativos", className="table-title"),
         html.Div(
             [
-                html.Div([
+                html.Div([ 
                     html.H3(f"{df['cliente_ativo'].value_counts().get('Sim', 0)}"),
                     html.P("Clientes Ativos")
                 ], className="card"),
-                html.Div([
+                html.Div([ 
                     html.H3(f"R$ {df['patrimonio'].sum():,.2f}"),
                     html.P("Patrimônio Total")
                 ], className="card"),
-                html.Div([
+                html.Div([ 
                     html.H3(f"{len(df[df['perfil_risco_ips'] > 4])}"),
                     html.P("Revisões Pendentes")
                 ], className="card"),
-                html.Div([
+                html.Div([ 
                     html.H3(f"{df['perfil_risco_ips'].mean():.1f}"),
                     html.P("Exposição CP Média")
                 ], className="card"),
@@ -129,20 +130,27 @@ clientes_ativos_page = html.Div(
     ]
 )
 
-# Layout da Página de Clientes com a Tabela e Barra de Busca
-tabela_clientes_page = html.Div(
+# Layout da Página de Relatório Gerencial Carteiras
+relatorio_gerencial_page = html.Div(
     [
-        html.H3("Tabela de Clientes", className="table-title"),
-        dcc.Input(
-            id="search-bar",
-            type="text",
-            placeholder="Digite para buscar...",
-            style={"marginBottom": "10px", "width": "100%", "padding": "10px", "fontSize": "16px"}
-        ),
+        html.H3("Relatório Gerencial Carteiras", className="table-title"),
         dt.DataTable(
-            id="clientes-table",
-            columns=[{"name": col, "id": col} for col in df.columns],
-            data=df.to_dict("records"),
+            id="relatorio-table",
+            columns=[
+                {"name": "Carteira", "id": "carteira"},
+                {"name": "Ativo", "id": "ativo"},
+                {"name": "Descrição", "id": "descricao"},
+                {"name": "Saldo Bruto", "id": "saldo_bruto"},
+            ],
+            # Abaixo, você pode adicionar os dados para preencher a tabela
+            data=[
+                {"carteira": "FINACAP009", "ativo": "04.899.128/0001-90", "descricao": "Sul América Excellence FI RF Créd Priv", "saldo_bruto": "44.519,63"},
+                {"carteira": "FINACAP009", "ativo": "05.964.067/0001-60", "descricao": "Finacap Mauritstad FIA", "saldo_bruto": "191.654,39"},
+                {"carteira": "FINACAP009", "ativo": "29.562.673/0001-57", "descricao": "BTG Pactual Digital Tesouro Selic Simples FI RF", "saldo_bruto": "18.757,83"},
+                {"carteira": "FINACAP009", "ativo": "FINACAP ICATU PREVIDENCIÁRIO TO FUNDO DE INVESTIMENTO MULTIMERCADO", "descricao": "Previdência", "saldo_bruto": "169.333,26"},
+                {"carteira": "FINACAP009", "ativo": "24.322,09", "descricao": "CDB", "saldo_bruto": "11.715,68"},
+                # Continue a lista conforme necessário com os outros dados...
+            ],
             style_table={"overflowX": "auto", "overflowY": "scroll", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
@@ -164,7 +172,7 @@ configuracoes_page = html.Div([html.H3("Configurações")])
 logout_page = html.Div([html.H3("Você saiu do sistema.")])
 
 # Layout principal e controle de rotas
-app.layout = html.Div([
+app.layout = html.Div([ 
     dcc.Location(id="url", refresh=False),
     sidebar,
     html.Div(id="page-content", className="content"),
@@ -181,6 +189,8 @@ def display_page(pathname):
         return patrimonio_total_page
     elif pathname == "/revisoes-pendentes":
         return revisoes_pendentes_page
+    elif pathname == "/relatorio-gerencial":
+        return relatorio_gerencial_page  # Exibe o Relatório Gerencial
     elif pathname == "/configuracoes":
         return configuracoes_page
     elif pathname == "/sair":
@@ -188,19 +198,20 @@ def display_page(pathname):
     else:
         return html.Div([html.H3("Página não encontrada!!")])
 
-# Callback para buscar e atualizar a tabela dinamicamente
+# Callback para buscar e atualizar a tabela dinamicamente (caso necessário)
 @app.callback(
-    Output("clientes-table", "data"),
+    Output("relatorio-table", "data"),
     [Input("update-data-btn", "n_clicks"), Input("search-bar", "value")]
 )
-def update_table(n_clicks, search_value):
-    global df
+def update_relatorio_table(n_clicks, search_value):
     if n_clicks:
-        df = fetch_data()  # Recarrega os dados
-    if not search_value:
-        return df.to_dict("records")
-    filtered_df = df[df.apply(lambda row: row.astype(str).str.contains(search_value, case=False).any(), axis=1)]
-    return filtered_df.to_dict("records")
+        # Você pode adicionar lógica para recarregar dados se necessário
+        pass
+    # Caso precise de filtragem, adicione o código aqui
+    return [
+        {"carteira": "FINACAP009", "ativo": "04.899.128/0001-90", "descricao": "Sul América Excellence FI RF Créd Priv", "saldo_bruto": "44.519,63"},
+        # Continue os dados aqui conforme necessário
+    ]
 
 if __name__ == "__main__":
     app.run_server(debug=True)
