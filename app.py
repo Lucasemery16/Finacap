@@ -13,7 +13,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="@QWEasd132",
+        password="Nautico1901",
         host="localhost",
         port="5432"
     )
@@ -51,7 +51,7 @@ def fetch_data():
 
     api_data = fetch_comdinheiro_data(
         username="consulta.finacap",
-        password=" #Consult@finac@p2025",
+        password="#Consult@finac@p2025",
         date="31122024",
         portfolio="FINACAP009+FINACAP147"
     )
@@ -130,6 +130,34 @@ clientes_ativos_page = html.Div(
     ]
 )
 
+# Layout da Página de Clientes com a Tabela e Barra de Busca
+tabela_clientes_page = html.Div(
+    [
+        html.H3("Tabela de Clientes", className="table-title"),
+        dcc.Input(
+            id="search-bar",
+            type="text",
+            placeholder="Digite para buscar...",
+            style={"marginBottom": "10px", "width": "100%", "padding": "10px", "fontSize": "16px"}
+        ),
+        dt.DataTable(
+            id="clientes-table",
+            columns=[{"name": col, "id": col} for col in df.columns],
+            data=df.to_dict("records"),
+            style_table={"overflowX": "auto", "overflowY": "scroll", "maxHeight": "500px"},
+            style_header={
+                "backgroundColor": "#1b51b1",
+                "color": "white",
+                "fontWeight": "bold",
+                "textAlign": "center",
+            },
+            style_cell={"textAlign": "center", "padding": "10px"},
+            style_data={"border": "1px solid #cbd6e2"}
+        ),
+    ],
+    className="table-container",
+)
+
 # Layout da Página de Relatório Gerencial Carteiras
 relatorio_gerencial_page = html.Div(
     [
@@ -142,14 +170,11 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Descrição", "id": "descricao"},
                 {"name": "Saldo Bruto", "id": "saldo_bruto"},
             ],
-            # Abaixo, você pode adicionar os dados para preencher a tabela
+            # Dados simulados
             data=[
                 {"carteira": "FINACAP009", "ativo": "04.899.128/0001-90", "descricao": "Sul América Excellence FI RF Créd Priv", "saldo_bruto": "44.519,63"},
                 {"carteira": "FINACAP009", "ativo": "05.964.067/0001-60", "descricao": "Finacap Mauritstad FIA", "saldo_bruto": "191.654,39"},
                 {"carteira": "FINACAP009", "ativo": "29.562.673/0001-57", "descricao": "BTG Pactual Digital Tesouro Selic Simples FI RF", "saldo_bruto": "18.757,83"},
-                {"carteira": "FINACAP009", "ativo": "FINACAP ICATU PREVIDENCIÁRIO TO FUNDO DE INVESTIMENTO MULTIMERCADO", "descricao": "Previdência", "saldo_bruto": "169.333,26"},
-                {"carteira": "FINACAP009", "ativo": "24.322,09", "descricao": "CDB", "saldo_bruto": "11.715,68"},
-                # Continue a lista conforme necessário com os outros dados...
             ],
             style_table={"overflowX": "auto", "overflowY": "scroll", "maxHeight": "500px"},
             style_header={
@@ -190,7 +215,7 @@ def display_page(pathname):
     elif pathname == "/revisoes-pendentes":
         return revisoes_pendentes_page
     elif pathname == "/relatorio-gerencial":
-        return relatorio_gerencial_page  # Exibe o Relatório Gerencial
+        return relatorio_gerencial_page
     elif pathname == "/configuracoes":
         return configuracoes_page
     elif pathname == "/sair":
@@ -198,20 +223,16 @@ def display_page(pathname):
     else:
         return html.Div([html.H3("Página não encontrada!!")])
 
-# Callback para buscar e atualizar a tabela dinamicamente (caso necessário)
+# Callback para buscar e atualizar a tabela dinamicamente
 @app.callback(
-    Output("relatorio-table", "data"),
-    [Input("update-data-btn", "n_clicks"), Input("search-bar", "value")]
+    Output("clientes-table", "data"),
+    [Input("search-bar", "value")]
 )
-def update_relatorio_table(n_clicks, search_value):
-    if n_clicks:
-        # Você pode adicionar lógica para recarregar dados se necessário
-        pass
-    # Caso precise de filtragem, adicione o código aqui
-    return [
-        {"carteira": "FINACAP009", "ativo": "04.899.128/0001-90", "descricao": "Sul América Excellence FI RF Créd Priv", "saldo_bruto": "44.519,63"},
-        # Continue os dados aqui conforme necessário
-    ]
+def update_clientes_table(search_value):
+    if not search_value:
+        return df.to_dict("records")
+    filtered_df = df[df.apply(lambda row: row.astype(str).str.contains(search_value, case=False).any(), axis=1)]
+    return filtered_df.to_dict("records")
 
 if __name__ == "__main__":
     app.run_server(debug=True)
