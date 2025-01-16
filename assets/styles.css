@@ -6,98 +6,209 @@
   bottom: 0;
   width: 250px;
   padding: 20px;
-  background-color: #001a5f;
-  color: white;
-  border-right: 1px solid #cbd6e2;
-  box-shadow: 0 1px 5px #eaf0f6;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: white; /* Fundo branco */
+  color: #002855; /* Texto azul */
+  border-right: 2px solid #e3e6eb;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
 }
 
 .logo {
-  width: 100%;
-  margin-bottom: 20px;
+  width: 80%;
+  margin: 0 auto 20px;
+  display: block;
 }
 
 .title {
   text-align: center;
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #002855;
   margin-bottom: 20px;
 }
 
 .menu-item {
-  color: white;
+  color: #002855; /* Azul */
+  padding: 12px 0;
   margin: 10px 0;
-  cursor: pointer;
-  transition: 0.3s;
   text-align: center;
-  display: block; /* Garante que cada item fique em uma linha */
-  width: 100%;
-  padding: 10px 0;
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 5px;
 }
 
 .menu-item:hover {
-  text-decoration: underline;
+  background-color: #f0f4f8; /* Leve cinza ao passar o mouse */
+  text-decoration: none;
 }
 
 /* Conteúdo Principal */
 .content {
   margin-left: 270px;
-  padding: 20px;
-  background: #fff;
-  color: #33475b;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  padding: 20px 30px;
+  background: #002855; /* Fundo azul */
+  color: white; /* Texto branco */
+  font-family: "Poppins", sans-serif;
+}
+
+/* Títulos */
+.page-title {
+  font-size: 24px;
+  color: #ffffff; /* Texto branco */
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 /* Cards de Métricas */
 .cards-container {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  justify-content: space-around;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .card {
-  background: #f8f9fa;
-  border: 1px solid #cbd6e2;
-  box-shadow: 0 1px 5px #eaf0f6;
+  background: white;
+  border: 1px solid #e3e6eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
   border-radius: 10px;
   text-align: center;
-  width: 24%;
+  width: 23%;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #002855;
+  margin-bottom: 10px;
+}
+
+.card-label {
+  font-size: 14px;
+  color: #777;
 }
 
 /* Gráficos */
 .graphs-container {
   display: flex;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .graph {
   width: 48%;
+  background: white; /* Fundo branco para contraste */
+  padding: 10px;
+  border-radius: 10px;
 }
 
-/* Tabela */
+/* Input e Dropdown */
+.input-field,
+.dropdown {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  background: #f9f9f9;
+}
+
+.input-field:focus,
+.dropdown:focus {
+  outline: none;
+  border-color: #14539a;
+  box-shadow: 0 0 5px rgba(20, 83, 154, 0.5);
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.search-container .search-bar {
+  flex: 2;
+  margin-right: 10px;
+}
+
+.search-container .filter-dropdown {
+  flex: 1;
+}
+
+/* Botões */
+.button {
+  background-color: #002855;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #14539a;
+}
+
+/* Tabelas */
 .table-container {
   margin-top: 20px;
 }
 
 .table-title {
-  color: #1b61b6;
   font-size: 20px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  color: #ffffff; /* Texto branco para contraste */
+  font-weight: bold;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
+.data-table {
+  border: 1px solid #e3e6eb;
+  border-radius: 10px;
+  color: #002855; /* Texto azul */
 }
 
-.table-header {
-  background: #1b51b1;
+.data-table th {
+  background-color: #1b51b1; /* Cabeçalho azul */
+  color: #002855; /* Texto azul */
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+}
+
+.data-table td {
+  background-color: #f5f7fa; /* Fundo claro */
+  color: #002855; /* Texto azul */
+  text-align: center;
+  padding: 10px;
+  border-bottom: 1px solid #e3e6eb;
+}
+
+/* Efeito ao passar o mouse */
+.data-table tbody tr:hover {
+  background-color: #dce4f0; /* Fundo mais claro ao passar o mouse */
+}
+
+/* Rodapé */
+.footer {
+  text-align: center;
+  font-size: 14px;
   color: white;
-  padding: 10px;
-}
-
-.table-data {
-  padding: 10px;
-  border: 1px solid #cbd6e2;
+  margin-top: 20px;
+  padding: 10px 0;
+  background: #001a40; /* Azul escuro */
 }
