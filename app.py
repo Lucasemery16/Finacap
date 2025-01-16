@@ -5,13 +5,15 @@ import plotly.express as px
 import dash.dash_table as dt
 import pandas as pd
 import psycopg2
+import requests
+import json
 
 # Função para obter os dados do banco de dados PostgreSQL
-def fetch_data():
+def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="postgres",
         host="localhost",
         port="5432"
     )
@@ -23,6 +25,44 @@ def fetch_data():
     df = pd.read_sql(query, conn)
     conn.close()
     return df
+
+# Função para obter os dados da API do Comdinheiro
+def fetch_comdinheiro_data(username, password, date, portfolio):
+    url = "https://www.comdinheiro.com.br/Clientes/API/EndPoint001.php"
+    querystring = {"code": "import_data"}
+    payload = (
+        f"username={username}&password={password}&URL=RelatorioGerencialCarteiras001.php%3F"
+        f"%26data_analise%3D{date}%26data_ini%3D%26nome_portfolio%3D{portfolio}"
+        f"%26variaveis%3Dnome_portfolio%2Bativo%2Bdesc%2Bsaldo_bruto%26filtro%3Dall"
+        f"%26ativo%3D%26filtro_IF%3Dtodos%26relat_alias%3D%26layout%3D0%26layoutB%3D0"
+        f"%26num_casas%3D%26enviar_email%3D0%26portfolio_editavel%3D%26filtro_id%3D&format=json3"
+    )
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    response = requests.post(url, data=payload, headers=headers, params=querystring)
+    if response.status_code == 200:
+        return json.loads(response.text)
+    else:
+        return {"error": f"Failed to fetch data: {response.status_code}"}
+
+# Função para combinar os dados de ambas as fontes
+def fetch_data():
+    postgres_df = fetch_postgres_data()
+
+    api_data = fetch_comdinheiro_data(
+        username="consulta.finacap",
+        password=" #Consult@finac@p2025",
+        date="31122024",
+        portfolio="FINACAP009+FINACAP147"
+    )
+
+    if "error" not in api_data:
+        api_df = pd.DataFrame(api_data['data'])  # Ajustar conforme o formato do retorno da API
+        combined_df = pd.concat([postgres_df, api_df], ignore_index=True)
+        return combined_df
+    else:
+        print(api_data["error"])
+        return postgres_df
 
 # Inicializando a aplicação Dash com controle de rotas
 app = dash.Dash(__name__)
@@ -47,9 +87,9 @@ sidebar = html.Div(
         dcc.Link("Clientes", href="/clientes", className="menu-item"),
         dcc.Link("Patrimônio Total", href="/patrimonio-total", className="menu-item"),
         dcc.Link("Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"),
-        dcc.Link("Lâmina", href="/lamina", className="menu-item"),
         dcc.Link("Configurações", href="/configuracoes", className="menu-item"),
         dcc.Link("Sair", href="/sair", className="menu-item"),
+        html.Button("Atualizar Dados", id="update-data-btn", className="update-button"),
     ],
     className="sidebar",
 )
@@ -151,9 +191,12 @@ def display_page(pathname):
 # Callback para buscar e atualizar a tabela dinamicamente
 @app.callback(
     Output("clientes-table", "data"),
-    Input("search-bar", "value")
+    [Input("update-data-btn", "n_clicks"), Input("search-bar", "value")]
 )
-def update_table(search_value):
+def update_table(n_clicks, search_value):
+    global df
+    if n_clicks:
+        df = fetch_data()  # Recarrega os dados
     if not search_value:
         return df.to_dict("records")
     filtered_df = df[df.apply(lambda row: row.astype(str).str.contains(search_value, case=False).any(), axis=1)]
