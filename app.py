@@ -11,7 +11,7 @@ def fetch_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="Nautico1901",
         host="localhost",
         port="5432"
     )
@@ -47,6 +47,7 @@ sidebar = html.Div(
         dcc.Link("Clientes", href="/clientes", className="menu-item"),
         dcc.Link("Patrimônio Total", href="/patrimonio-total", className="menu-item"),
         dcc.Link("Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"),
+        dcc.Link("Lâmina", href="/lamina", className="menu-item"),
         dcc.Link("Configurações", href="/configuracoes", className="menu-item"),
         dcc.Link("Sair", href="/sair", className="menu-item"),
     ],
