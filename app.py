@@ -11,7 +11,7 @@ def fetch_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="Nautico1901",
         host="localhost",
         port="5432"
     )
@@ -89,17 +89,16 @@ clientes_ativos_page = html.Div(
     ]
 )
 
-# Layout da Página de Clientes com a Tabela
-# Removida a paginação e adicionado overflowY para rolagem
-
-
-
-
-
-
+# Layout da Página de Clientes com a Tabela e Barra de Busca
 tabela_clientes_page = html.Div(
     [
         html.H3("Tabela de Clientes", className="table-title"),
+        dcc.Input(
+            id="search-bar",
+            type="text",
+            placeholder="Digite para buscar...",
+            style={"marginBottom": "10px", "width": "100%", "padding": "10px", "fontSize": "16px"}
+        ),
         dt.DataTable(
             id="clientes-table",
             columns=[{"name": col, "id": col} for col in df.columns],
@@ -131,6 +130,7 @@ app.layout = html.Div([
     html.Div(id="page-content", className="content"),
 ])
 
+# Callback para controle de rotas
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
     if pathname in ["/clientes-ativos", "/"]:
@@ -147,6 +147,17 @@ def display_page(pathname):
         return logout_page
     else:
         return html.Div([html.H3("Página não encontrada!!")])
+
+# Callback para buscar e atualizar a tabela dinamicamente
+@app.callback(
+    Output("clientes-table", "data"),
+    Input("search-bar", "value")
+)
+def update_table(search_value):
+    if not search_value:
+        return df.to_dict("records")
+    filtered_df = df[df.apply(lambda row: row.astype(str).str.contains(search_value, case=False).any(), axis=1)]
+    return filtered_df.to_dict("records")
 
 if __name__ == "__main__":
     app.run_server(debug=True)
