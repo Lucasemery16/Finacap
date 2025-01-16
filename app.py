@@ -11,7 +11,7 @@ def fetch_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="postgres",
         host="localhost",
         port="5432"
     )
