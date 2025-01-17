@@ -1,7 +1,6 @@
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
-from sqlalchemy import create_engine
 import plotly.express as px
 import dash.dash_table as dt
 import pandas as pd
@@ -18,7 +17,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="Nautico1901",
         host="localhost",
         port="5432",
     )
@@ -31,13 +30,13 @@ def fetch_postgres_data():
     conn.close()
     return df
 
+
 # Função para obter os dados da API do Comdinheiro
-def fetch_comdinheiro_data(username, password, date, portfolio):
+def fetch_comdinheiro_data():
     url = "https://www.comdinheiro.com.br/Clientes/API/EndPoint001.php"
     querystring = {"code": "import_data"}
 
-    # Criação do payload com o portfólio no formato solicitado
-    portfolio_formatted = portfolio.replace("+", "%2B").replace(" ", "%25BE")
+    # Definindo a chave de autenticação e outros parâmetros
     payload = {
         "username": "consulta.finacap",
         "password": "#Consult@finac@p2025",
@@ -51,37 +50,61 @@ def fetch_comdinheiro_data(username, password, date, portfolio):
         response.raise_for_status()  # Levanta um erro para status codes não 200
         api_data = response.json()
 
-        if "data" not in api_data:
-            raise KeyError(f"Resposta inesperada: {api_data}")
-        return api_data
+        # Verifica a resposta da API
+        print("Resposta completa da API:", json.dumps(api_data, indent=2))  # Exibe a resposta completa para depuração
+        
+        # Verifique se a chave 'data' existe ou se precisamos acessar outra chave
+        if "data" in api_data:
+            data = api_data["data"]
+        elif "lin661" in api_data:  # Checa se os dados estão nas linhas
+            data = api_data  # Se não houver chave 'data', usamos os próprios dados
+        else:
+            print(f"A resposta da API não contém a chave 'data' ou 'lin661': {api_data}")
+            return pd.DataFrame()  # Retorna um DataFrame vazio se não encontrarmos os dados
+
+        # Criar uma lista de registros formatada de forma tabular
+        data_list = []
+        for key, value in data.items():
+            record = {
+                'col0': value.get('col0', 'Não disponível'),
+                'col1': value.get('col1', 'Não disponível'),
+                'col2': value.get('col2', 'Não disponível'),
+                'col3': value.get('col3', 'Não disponível')
+            }
+            data_list.append(record)
+
+        # Criar DataFrame a partir da lista de registros
+        df_api = pd.DataFrame(data_list)
+        print(f"Quantidade de dados recuperados da API: {len(df_api)}")
+        return df_api  # Retorna o DataFrame para ser usado no Dash
+
     except requests.exceptions.RequestException as e:
         print(f"Erro de conexão: {e}")
-        return {"error": str(e)}
+        return pd.DataFrame()  # Retorna um DataFrame vazio em caso de erro de conexão
     except KeyError as e:
         print(f"Erro no formato da resposta: {e}")
-        return {"error": str(e)}
+        return pd.DataFrame()  # Retorna um DataFrame vazio
+
 
 # Função para combinar os dados de ambas as fontes
-def fetch_data():
-    postgres_df = fetch_postgres_data()
-
-    # Dados da API
-    api_data = fetch_comdinheiro_data(
-        username="consulta.finacap",
-        password="#Consult@finac@p2025",
-        date="09012025",
-        portfolio="FINACAP056 + FINACAP096 + FINACAP130 + FINACAP137 + FINACAP147 + FINACAP148 + FINACAP149 + FINACAP150 + FINACAP157 + FINACAP002 + FINACAP003 + FINACAP004 + FINACAP005 + FINACAP006 + FINACAP007 + FINACAP008 + FINACAP009 + FINACAP010 + FINACAP011 + FINACAP012 + FINACAP056_BRL + FINACAP056_USD + FINACAP096_BRL + FINACAP096_USD + FINACAP130_USD + FINACAP137_BRL + FINACAP137_USD + FINACAP147_BRL + FINACAP147_USD + FINACAP148_BRL + FINACAP148_USD + FINACAP149_BRL + FINACAP149_USD + FINACAP150_BRL + FINACAP150_USD + FINACAP157_BRL + FINACAP157_USD + FINACAP165",
-    )
-
-    if "error" not in api_data:
-        api_df = pd.DataFrame(
-            api_data["data"]
-        )  # Ajuste conforme o formato da resposta da API
-        combined_df = pd.concat([postgres_df, api_df], ignore_index=True)
-        return combined_df
-    else:
-        print(api_data["error"])
-        return postgres_df
+def fetch_data(tipo="postgres"):
+    print(f"Buscando dados da fonte: {tipo}")  # Debugging
+    if tipo == "postgres":
+        # Retorna os dados do banco de dados para clientes e clientes ativos
+        df = fetch_postgres_data()
+        print("Dados do PostgreSQL carregados:")
+        print(df.head())  # Exibe as primeiras linhas para depuração
+        return df
+    elif tipo == "api":
+        # Retorna os dados da API para o relatório gerencial
+        df_api = fetch_comdinheiro_data()
+        if df_api.empty:
+            print("Erro ao recuperar dados da API ou dados vazios.")
+            return pd.DataFrame()  # Retorna um DataFrame vazio se der erro
+        else:
+            print("Dados da API carregados:")
+            print(df_api.head())  # Exibe as primeiras linhas dos dados da API para depuração
+            return df_api
 
 
 # Inicializando a aplicação Dash
@@ -89,19 +112,21 @@ app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = "Dashboard Finacap"
 app.config.suppress_callback_exceptions = True
 
-# Dados iniciais
-df = fetch_data()
-df["cliente_ativo"] = df["cliente_ativo"].str.strip().str.capitalize()
-df["perfil_risco_ips"] = pd.to_numeric(df["perfil_risco_ips"], errors="coerce")
+# Dados iniciais - Carrega tanto os dados do banco de dados quanto da API
+df_postgres = fetch_data(tipo="postgres")  # Carregar dados do banco para clientes
+df_api = fetch_data(tipo="api")  # Carregar dados da API para o relatório gerencial
+
+df_postgres["cliente_ativo"] = df_postgres["cliente_ativo"].str.strip().str.capitalize()
+df_postgres["perfil_risco_ips"] = pd.to_numeric(df_postgres["perfil_risco_ips"], errors="coerce")
 
 # Gráficos
 fig_pie = px.pie(
-    df,
+    df_postgres,
     names="suitability_cliente",
     values="patrimonio",
     title="Distribuição de Patrimônio por Suitability",
 )
-fig_bar = px.bar(df, x="nome_cliente", y="patrimonio", title="Patrimônio por Cliente")
+fig_bar = px.bar(df_postgres, x="nome_cliente", y="patrimonio", title="Patrimônio por Cliente")
 
 # Layout da tela de autenticação
 auth_layout = html.Div(
@@ -185,7 +210,7 @@ clientes_ativos_page = html.Div(
                 html.Div(
                     [
                         html.H3(
-                            f"{df['cliente_ativo'].value_counts().get('Sim', 0)}",
+                            f"{df_postgres['cliente_ativo'].value_counts().get('Sim', 0)}",
                             className="card-value",
                         ),
                         html.P("Clientes Ativos", className="card-label"),
@@ -195,7 +220,7 @@ clientes_ativos_page = html.Div(
                 html.Div(
                     [
                         html.H3(
-                            f"{len(df[df['perfil_risco_ips'] > 4])}",
+                            f"{len(df_postgres[df_postgres['perfil_risco_ips'] > 4])}",
                             className="card-value",
                         ),
                         html.P("Revisões Pendentes", className="card-label"),
@@ -205,7 +230,7 @@ clientes_ativos_page = html.Div(
                 html.Div(
                     [
                         html.H3(
-                            f"{df['perfil_risco_ips'].mean():.1f}",
+                            f"{df_postgres['perfil_risco_ips'].mean():.1f}",
                             className="card-value",
                         ),
                         html.P("Exposição CP Média", className="card-label"),
@@ -265,8 +290,8 @@ tabela_clientes_page = html.Div(
         ),
         dt.DataTable(
             id="clientes-table",
-            columns=[{"name": col, "id": col} for col in df.columns],
-            data=df.to_dict("records"),
+            columns=[{"name": col, "id": col} for col in df_postgres.columns],
+            data=df_postgres.to_dict("records"),
             style_table={"overflowX": "auto"},
             style_header={
                 "backgroundColor": "#1b51b1",
@@ -282,7 +307,6 @@ tabela_clientes_page = html.Div(
 relatorio_gerencial_page = html.Div(
     [
         html.H3("Relatório Gerencial Carteiras", className="page-title"),
-        # Colocando a barra de pesquisa e o filtro de coluna
         html.Div(
             [
                 dcc.Input(
@@ -319,7 +343,7 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Descrição", "id": "descricao"},
                 {"name": "Saldo Bruto", "id": "saldo_bruto"},
             ],
-            data=df.to_dict("records"),  # Preenchendo com os dados do DataFrame
+            data=df_api.to_dict("records"),  # Passa os dados da API para a tabela
             style_table={"overflowX": "auto", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
@@ -331,7 +355,7 @@ relatorio_gerencial_page = html.Div(
     ]
 )
 
-# Callback combinado para atualizar a tabela de relatórios gerenciais
+# Callback para atualizar a tabela de relatórios gerenciais
 @app.callback(
     Output("relatorio-table", "data"),
     [
@@ -341,15 +365,20 @@ relatorio_gerencial_page = html.Div(
     ],
 )
 def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
+    print("Atualizando Relatório Gerencial...")  # Debugging
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
-    global df
-    # Se o botão de atualização for clicado
-    if triggered_id == "update-data-btn" and n_clicks:
-        df = fetch_data()  # Atualiza os dados globais
+    # Usar dados da API para a tabela de Relatório Gerencial
+    df_api = fetch_data(tipo="api")  # Dados da API para o relatório gerencial
 
-    filtered_df = df.copy()
+    print("Dados carregados para Relatório Gerencial:")
+    print(df_api.head())  # Exibe as primeiras linhas para depuração
+
+    if df_api.empty:
+        return []  # Retorna uma lista vazia se não houver dados
+
+    filtered_df = df_api.copy()
 
     # Aplicar busca
     if search_value:
@@ -433,12 +462,10 @@ def update_clientes_table_or_data(n_clicks, search_value, filter_column):
     ctx = dash.callback_context  # Obter contexto do callback
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
-    global df
-    # Se o botão de atualização for clicado
-    if triggered_id == "update-data-btn" and n_clicks:
-        df = fetch_data()  # Atualiza os dados globais
+    # Usar dados do banco para a tabela de Clientes
+    df_postgres = fetch_data(tipo="postgres")  # Dados do banco de dados
 
-    filtered_df = df.copy()
+    filtered_df = df_postgres.copy()
 
     # Aplicar busca
     if search_value:
