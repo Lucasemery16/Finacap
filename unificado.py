@@ -18,7 +18,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="postgres",
         host="localhost",
         port="5432",
     )
@@ -65,6 +65,7 @@ def fetch_comdinheiro_data(username, password, date, portfolio):
 def fetch_data():
     postgres_df = fetch_postgres_data()
 
+    # Dados da API
     api_data = fetch_comdinheiro_data(
         username="consulta.finacap",
         password="#Consult@finac@p2025",
@@ -75,7 +76,7 @@ def fetch_data():
     if "error" not in api_data:
         api_df = pd.DataFrame(
             api_data["data"]
-        )  # Ajustar conforme o formato do retorno da API
+        )  # Ajuste conforme o formato da resposta da API
         combined_df = pd.concat([postgres_df, api_df], ignore_index=True)
         return combined_df
     else:
@@ -277,9 +278,39 @@ tabela_clientes_page = html.Div(
     ]
 )
 
+# Página de Relatório Gerencial
 relatorio_gerencial_page = html.Div(
     [
         html.H3("Relatório Gerencial Carteiras", className="page-title"),
+        # Colocando a barra de pesquisa e o filtro de coluna
+        html.Div(
+            [
+                dcc.Input(
+                    id="search-bar",
+                    type="text",
+                    placeholder="Buscar...",
+                    style={
+                        "marginBottom": "10px",
+                        "width": "50%",
+                        "padding": "5px",
+                        "fontSize": "14px",
+                    },
+                ),
+                dcc.Dropdown(
+                    id="filter-column",
+                    options=[
+                        {"label": "Todos", "value": "all"},
+                        {"label": "Carteira", "value": "carteira"},
+                        {"label": "Ativo", "value": "ativo"},
+                        {"label": "Descrição", "value": "descricao"},
+                        {"label": "Saldo Bruto", "value": "saldo_bruto"},
+                    ],
+                    placeholder="Filtrar por coluna...",
+                    style={"marginBottom": "10px", "width": "50%"},
+                ),
+            ],
+            style={"display": "flex", "justifyContent": "space-between"},
+        ),
         dt.DataTable(
             id="relatorio-table",
             columns=[
@@ -288,26 +319,7 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Descrição", "id": "descricao"},
                 {"name": "Saldo Bruto", "id": "saldo_bruto"},
             ],
-            data=[
-                {
-                    "carteira": "FINACAP009",
-                    "ativo": "04.899.128/0001-90",
-                    "descricao": "Sul América Excellence FI RF Créd Priv",
-                    "saldo_bruto": "44.519,63",
-                },
-                {
-                    "carteira": "FINACAP009",
-                    "ativo": "05.964.067/0001-60",
-                    "descricao": "Finacap Mauritstad FIA",
-                    "saldo_bruto": "191.654,39",
-                },
-                {
-                    "carteira": "FINACAP009",
-                    "ativo": "29.562.673/0001-57",
-                    "descricao": "BTG Pactual Digital Tesouro Selic Simples FI RF",
-                    "saldo_bruto": "18.757,83",
-                },
-            ],
+            data=df.to_dict("records"),  # Preenchendo com os dados do DataFrame
             style_table={"overflowX": "auto", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
@@ -319,20 +331,42 @@ relatorio_gerencial_page = html.Div(
     ]
 )
 
-lamina_page = html.Div(
+# Callback combinado para atualizar a tabela de relatórios gerenciais
+@app.callback(
+    Output("relatorio-table", "data"),
     [
-        html.H3("Lamina", className="page-title"),
-        html.Div(
-            [
-                html.P(
-                    "Conteúdo da página de lamina em construção.",
-                    className="page-content",
-                )
-            ]
-        ),
-    ]
+        Input("update-data-btn", "n_clicks"),
+        Input("search-bar", "value"),
+        Input("filter-column", "value"),
+    ],
 )
+def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
+    global df
+    # Se o botão de atualização for clicado
+    if triggered_id == "update-data-btn" and n_clicks:
+        df = fetch_data()  # Atualiza os dados globais
+
+    filtered_df = df.copy()
+
+    # Aplicar busca
+    if search_value:
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: row.astype(str)
+                .str.contains(search_value, case=False)
+                .any(),
+                axis=1,
+            )
+        ]
+
+    # Aplicar filtro de coluna
+    if filter_column and filter_column != "all":
+        filtered_df = filtered_df[[filter_column]]
+
+    return filtered_df.to_dict("records")
 
 # Callback para alternar entre autenticação e dashboard
 @app.callback(
@@ -352,7 +386,6 @@ def validar_token(n_clicks, n_submit, token):
     [Input("auth-page-content", "children")],
 )
 def reset_url_on_logout(content):
-    # Redefine a URL para "/" sempre que o layout é trocado para a tela de login
     if content == auth_layout:
         return "/"
     return dash.no_update
@@ -424,7 +457,6 @@ def update_clientes_table_or_data(n_clicks, search_value, filter_column):
 
     return filtered_df.to_dict("records")
 
-
 # Layout principal
 app.layout = html.Div(
     [
@@ -440,4 +472,3 @@ app.layout = html.Div(
 
 if __name__ == "__main__":
    app.run_server(debug=True, port=8052)
-
