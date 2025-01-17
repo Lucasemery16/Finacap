@@ -18,7 +18,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="@QWEasd132",
+        password="Nautico1901",
         host="localhost",
         port="5432",
     )
@@ -38,20 +38,28 @@ def fetch_comdinheiro_data(username, password, date, portfolio):
 
     # Criação do payload com o portfólio no formato solicitado
     portfolio_formatted = portfolio.replace("+", "%2B").replace(" ", "%25BE")
-    payload = "username=consulta.finacap&password=#Consult@finac@p2025&URL=RelatorioGerencialCarteiras001.php%3F%26data_analise%3D10012025%26data_ini%3D%26nome_portfolio%3DFINACAP056%2B%25BE%2BFINACAP096%2B%25BE%2BFINACAP130%2B%25BE%2BFINACAP137%2B%25BE%2BFINACAP147%2B%25BE%2BFINACAP148%2B%25BE%2BFINACAP149%2B%25BE%2BFINACAP150%2B%25BE%2BFINACAP157%2B%25BE%2BFINACAP002%2B%25BE%2BFINACAP003%2B%25BE%2BFINACAP004%2B%25BE%2BFINACAP005%2B%25BE%2BFINACAP006%2B%25BE%2BFINACAP007%2B%25BE%2BFINACAP008%2B%25BE%2BFINACAP009%2B%25BE%2BFINACAP010%2B%25BE%2BFINACAP011%2B%25BE%2BFINACAP012%2B%25BE%2BFINACAP056_BRL%2B%25BE%2BFINACAP056_USD%2B%25BE%2BFINACAP096_BRL%2B%25BE%2BFINACAP096_USD%2B%25BE%2BFINACAP130_USD%2B%25BE%2BFINACAP137_BRL%2B%25BE%2BFINACAP137_USD%2B%25BE%2BFINACAP147_BRL%2B%25BE%2BFINACAP147_USD%2B%25BE%2BFINACAP148_BRL%2B%25BE%2BFINACAP148_USD%2B%25BE%2BFINACAP149_BRL%2B%25BE%2BFINACAP149_USD%2B%25BE%2BFINACAP150_BRL%2B%25BE%2BFINACAP150_USD%2B%25BE%2BFINACAP157_BRL%2B%25BE%2BFINACAP157_USD%2B%25BE%2BFINACAP165%26variaveis%3Dnome_portfolio%2Bativo%2Bdesc%2Bsaldo_bruto%26filtro%3Dall%26ativo%3D%26filtro_IF%3Dtodos%26relat_alias%3D%26layout%3D0%26layoutB%3D0%26num_casas%3D%26enviar_email%3D0%26portfolio_editavel%3D%26filtro_id%3D&format=json3"
-
+    payload = {
+        "username": "consulta.finacap",
+        "password": "#Consult@finac@p2025",
+        "URL": "RelatorioGerencialCarteiras001.php?&data_analise=10012025",
+        "format": "json3",
+    }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     
-    response = requests.post(url, data=payload, headers=headers, params=querystring)
+    try:
+        response = requests.post(url, data=payload, headers=headers, params=querystring)
+        response.raise_for_status()  # Levanta um erro para status codes não 200
+        api_data = response.json()
 
-    print(f"Status Code: {response.status_code}")
-    print(f"Response Text: {response.text}")
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": f"Failed to fetch data: {response.status_code}"}
-
+        if "data" not in api_data:
+            raise KeyError(f"Resposta inesperada: {api_data}")
+        return api_data
+    except requests.exceptions.RequestException as e:
+        print(f"Erro de conexão: {e}")
+        return {"error": str(e)}
+    except KeyError as e:
+        print(f"Erro no formato da resposta: {e}")
+        return {"error": str(e)}
 
 # Função para combinar os dados de ambas as fontes
 def fetch_data():
@@ -431,4 +439,5 @@ app.layout = html.Div(
 )
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8051)
+   app.run_server(debug=True, port=8052)
+
