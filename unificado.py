@@ -111,22 +111,21 @@ sidebar = html.Div([
     html.Div([
         dcc.Link("Clientes Ativos", href="/clientes-ativos", className="menu-item"),
         dcc.Link("Clientes", href="/clientes", className="menu-item"),
-        dcc.Link("Patrimônio Total", href="/patrimonio-total", className="menu-item"),
         dcc.Link("Revisões Pendentes", href="/revisoes-pendentes", className="menu-item"),
         dcc.Link("Relatório Gerencial", href="/relatorio-gerencial", className="menu-item"),
-        dcc.Link("Configurações", href="/configuracoes", className="menu-item"),
+        dcc.Link("Lamina", href="/lamina", className="menu-item"),
         dcc.Link("Sair", href="/sair", className="menu-item"),
     ], className="menu-container"),
     html.Button("Atualizar Dados", id="update-data-btn", className="update-button"),
 ], className="sidebar")
 
-footer = html.Div("© 2025 Finacap Investimentos Ltda", className="footer")
+footer = html.Div("\u00a9 2025 Finacap Investimentos Ltda", className="footer")
 
 dashboard_layout = html.Div([
     dcc.Location(id="url", refresh=False),
     sidebar,
     html.Div(id="page-content", className="content"),
-    footer  # Adicionando o rodapé
+    footer
 ])
 
 # Páginas do dashboard
@@ -136,10 +135,6 @@ clientes_ativos_page = html.Div([
         html.Div([
             html.H3(f"{df['cliente_ativo'].value_counts().get('Sim', 0)}", className="card-value"),
             html.P("Clientes Ativos", className="card-label")
-        ], className="card"),
-        html.Div([
-            html.H3(f"R$ {df['patrimonio'].sum():,.2f}", className="card-value"),
-            html.P("Patrimônio Total", className="card-label")
         ], className="card"),
         html.Div([
             html.H3(f"{len(df[df['perfil_risco_ips'] > 4])}", className="card-value"),
@@ -213,6 +208,13 @@ relatorio_gerencial_page = html.Div([
     )
 ])
 
+lamina_page = html.Div([
+    html.H3("Lamina", className="page-title"),
+    html.Div([
+        html.P("Conteúdo da página de lamina em construção.", className="page-content")
+    ])
+])
+
 # Callback para alternar entre autenticação e dashboard
 @app.callback(
     Output("auth-page-content", "children"),
@@ -222,9 +224,34 @@ relatorio_gerencial_page = html.Div([
 def validar_token(n_clicks, n_submit, token):
     if (n_clicks > 0 or n_submit) and token == TOKEN_CORRETO:
         return dashboard_layout
-    elif n_clicks > 0 or n_submit:
-        return auth_layout
     return auth_layout
+
+# Callback para redefinir a URL após logout
+@app.callback(
+    Output("auth-url", "pathname"),
+    [Input("auth-page-content", "children")],
+)
+def reset_url_on_logout(content):
+    # Redefine a URL para "/" sempre que o layout é trocado para a tela de login
+    if content == auth_layout:
+        return "/"
+    return dash.no_update
+
+# Callback para controle de rotas no dashboard
+@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+def display_page(pathname):
+    if pathname in ["/clientes-ativos", "/"]:
+        return clientes_ativos_page
+    elif pathname == "/clientes":
+        return tabela_clientes_page
+    elif pathname == "/relatorio-gerencial":
+        return relatorio_gerencial_page
+    elif pathname == "/lamina":
+        return lamina_page
+    elif pathname == "/sair":
+        return auth_layout
+    else:
+        return html.Div([html.H3("Página não encontrada!!", className="error-message")])
 
 # Callback para alternar visibilidade do campo de senha
 @app.callback(
@@ -263,21 +290,10 @@ def update_clientes_table_or_data(n_clicks, search_value, filter_column):
 
     return filtered_df.to_dict("records")
 
-# Callback para controle de rotas no dashboard
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def display_page(pathname):
-    if pathname in ["/clientes-ativos", "/"]:
-        return clientes_ativos_page
-    elif pathname == "/clientes":
-        return tabela_clientes_page
-    elif pathname == "/relatorio-gerencial":
-        return relatorio_gerencial_page
-    else:
-        return html.Div([html.H3("Página não encontrada!!", className="error-message")])
-
 # Layout principal
 app.layout = html.Div([
-    dcc.Location(id="auth-url", refresh=False),
+    dcc.Location(id="auth-url", refresh=False),  # Captura a URL inicial para controle de autenticação
+    dcc.Location(id="url", refresh=False),  # Captura a URL para navegação interna no dashboard
     html.Div(id="auth-page-content", children=auth_layout)
 ])
 
