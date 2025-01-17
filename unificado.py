@@ -1,6 +1,7 @@
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
+from sqlalchemy import create_engine
 import plotly.express as px
 import dash.dash_table as dt
 import pandas as pd
@@ -30,7 +31,6 @@ def fetch_postgres_data():
     conn.close()
     return df
 
-
 # Função para obter os dados da API do Comdinheiro
 def fetch_comdinheiro_data(username, password, date, portfolio):
     url = "https://www.comdinheiro.com.br/Clientes/API/EndPoint001.php"
@@ -38,28 +38,7 @@ def fetch_comdinheiro_data(username, password, date, portfolio):
 
     # Criação do payload com o portfólio no formato solicitado
     portfolio_formatted = portfolio.replace("+", "%2B").replace(" ", "%25BE")
-    payload = {
-        "username": "consulta.finacap",
-        "password": "#Consult@finac@p2025",
-        "URL": (
-            f"RelatorioGerencialCarteiras001.php?"
-            f"&data_analise= 09012025"
-            "&data_ini="
-            f"&nome_portfolio=FINACAP056 + FINACAP096 + FINACAP130 + FINACAP137 + FINACAP147 + FINACAP148 + FINACAP149 + FINACAP150 + FINACAP157 + FINACAP002 + FINACAP003 + FINACAP004 + FINACAP005 + FINACAP006 + FINACAP007 + FINACAP008 + FINACAP009 + FINACAP010 + FINACAP011 + FINACAP012 + FINACAP056_BRL + FINACAP056_USD + FINACAP096_BRL + FINACAP096_USD + FINACAP130_USD + FINACAP137_BRL + FINACAP137_USD + FINACAP147_BRL + FINACAP147_USD + FINACAP148_BRL + FINACAP148_USD + FINACAP149_BRL + FINACAP149_USD + FINACAP150_BRL + FINACAP150_USD + FINACAP157_BRL + FINACAP157_USD + FINACAP165"
-            "&variaveis=nome_portfolio+ativo+desc+saldo_bruto"
-            "&filtro=all"
-            "&ativo="
-            "&filtro_IF=todos"
-            "&relat_alias="
-            "&layout=0"
-            "&layoutB=0"
-            "&num_casas="
-            "&enviar_email=0"
-            "&portfolio_editavel="
-            "&filtro_id="
-        ),
-        "format": "json3",
-    }
+    payload = "username=consulta.finacap&password=#Consult@finac@p2025&URL=RelatorioGerencialCarteiras001.php%3F%26data_analise%3D10012025%26data_ini%3D%26nome_portfolio%3DFINACAP056%2B%25BE%2BFINACAP096%2B%25BE%2BFINACAP130%2B%25BE%2BFINACAP137%2B%25BE%2BFINACAP147%2B%25BE%2BFINACAP148%2B%25BE%2BFINACAP149%2B%25BE%2BFINACAP150%2B%25BE%2BFINACAP157%2B%25BE%2BFINACAP002%2B%25BE%2BFINACAP003%2B%25BE%2BFINACAP004%2B%25BE%2BFINACAP005%2B%25BE%2BFINACAP006%2B%25BE%2BFINACAP007%2B%25BE%2BFINACAP008%2B%25BE%2BFINACAP009%2B%25BE%2BFINACAP010%2B%25BE%2BFINACAP011%2B%25BE%2BFINACAP012%2B%25BE%2BFINACAP056_BRL%2B%25BE%2BFINACAP056_USD%2B%25BE%2BFINACAP096_BRL%2B%25BE%2BFINACAP096_USD%2B%25BE%2BFINACAP130_USD%2B%25BE%2BFINACAP137_BRL%2B%25BE%2BFINACAP137_USD%2B%25BE%2BFINACAP147_BRL%2B%25BE%2BFINACAP147_USD%2B%25BE%2BFINACAP148_BRL%2B%25BE%2BFINACAP148_USD%2B%25BE%2BFINACAP149_BRL%2B%25BE%2BFINACAP149_USD%2B%25BE%2BFINACAP150_BRL%2B%25BE%2BFINACAP150_USD%2B%25BE%2BFINACAP157_BRL%2B%25BE%2BFINACAP157_USD%2B%25BE%2BFINACAP165%26variaveis%3Dnome_portfolio%2Bativo%2Bdesc%2Bsaldo_bruto%26filtro%3Dall%26ativo%3D%26filtro_IF%3Dtodos%26relat_alias%3D%26layout%3D0%26layoutB%3D0%26num_casas%3D%26enviar_email%3D0%26portfolio_editavel%3D%26filtro_id%3D&format=json3"
 
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     
