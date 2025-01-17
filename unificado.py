@@ -50,33 +50,34 @@ def fetch_comdinheiro_data():
         response.raise_for_status()  # Levanta um erro para status codes não 200
         api_data = response.json()
 
-        # Verifica a resposta da API
-        print("Resposta completa da API:", json.dumps(api_data, indent=2))  # Exibe a resposta completa para depuração
-        
-        # Verifique se a chave 'data' existe ou se precisamos acessar outra chave
-        if "data" in api_data:
-            data = api_data["data"]
-        elif "lin661" in api_data:  # Checa se os dados estão nas linhas
-            data = api_data  # Se não houver chave 'data', usamos os próprios dados
+        # Exibe a resposta da API no terminal para depuração
+        print("Resposta completa da API:", json.dumps(api_data, indent=2))
+
+        # A resposta da API não contém uma chave 'data' diretamente, mas está nas linhas 'lin661', 'lin662', ...
+        if "tables" in api_data and "tab0" in api_data["tables"]:
+            # Acessar a tabela de dados que está dentro de 'tab0'
+            table_data = api_data["tables"]["tab0"]
+            
+            # Converter os dados das linhas em um formato tabular
+            data_list = []
+            for key, value in table_data.items():
+                # Cria um registro por linha
+                record = {
+                    'col0': value.get('col0', 'Não disponível'),
+                    'col1': value.get('col1', 'Não disponível'),
+                    'col2': value.get('col2', 'Não disponível'),
+                    'col3': value.get('col3', 'Não disponível')
+                }
+                data_list.append(record)
+
+            # Criar DataFrame a partir da lista de registros
+            df_api = pd.DataFrame(data_list)
+            print(f"Quantidade de dados recuperados da API: {len(df_api)}")
+            return df_api  # Retorna o DataFrame para ser usado no Dash
+
         else:
-            print(f"A resposta da API não contém a chave 'data' ou 'lin661': {api_data}")
-            return pd.DataFrame()  # Retorna um DataFrame vazio se não encontrarmos os dados
-
-        # Criar uma lista de registros formatada de forma tabular
-        data_list = []
-        for key, value in data.items():
-            record = {
-                'col0': value.get('col0', 'Não disponível'),
-                'col1': value.get('col1', 'Não disponível'),
-                'col2': value.get('col2', 'Não disponível'),
-                'col3': value.get('col3', 'Não disponível')
-            }
-            data_list.append(record)
-
-        # Criar DataFrame a partir da lista de registros
-        df_api = pd.DataFrame(data_list)
-        print(f"Quantidade de dados recuperados da API: {len(df_api)}")
-        return df_api  # Retorna o DataFrame para ser usado no Dash
+            print(f"A resposta da API não contém os dados esperados.")
+            return pd.DataFrame()  # Retorna um DataFrame vazio se não houver dados
 
     except requests.exceptions.RequestException as e:
         print(f"Erro de conexão: {e}")
@@ -378,6 +379,15 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     if df_api.empty:
         return []  # Retorna uma lista vazia se não houver dados
 
+    # Garantir que os dados estejam sendo enviados corretamente
+    # Ajustar o formato para que a tabela possa renderizar corretamente
+    df_api = df_api.rename(columns={
+        'col0': 'Carteira',
+        'col1': 'Ativo',
+        'col2': 'Descrição',
+        'col3': 'Saldo Bruto'
+    })
+
     filtered_df = df_api.copy()
 
     # Aplicar busca
@@ -395,6 +405,7 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     if filter_column and filter_column != "all":
         filtered_df = filtered_df[[filter_column]]
 
+    # Retornar os dados para a tabela no formato adequado
     return filtered_df.to_dict("records")
 
 # Callback para alternar entre autenticação e dashboard
