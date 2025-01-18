@@ -9,14 +9,15 @@ import requests
 import json
 
 # Token de autenticação
-TOKEN_CORRETO = "1"
+TOKEN_CORRETO = "#Finacap@"
+
 
 # Função para obter os dados do banco de dados PostgreSQL
 def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="@QWEasd132",
         host="localhost",
         port="5432",
     )
@@ -29,7 +30,8 @@ def fetch_postgres_data():
     conn.close()
     return df
 
-# Função para obter os dados da API do Comdinheiro
+
+# Função para obter os dados da API do Comdinheiro com alterações
 def fetch_comdinheiro_data():
     url = "https://www.comdinheiro.com.br/Clientes/API/EndPoint001.php"
     querystring = {"code": "import_data"}
@@ -47,26 +49,24 @@ def fetch_comdinheiro_data():
         response.raise_for_status()
         api_data = response.json()
 
-        if not api_data or "tables" not in api_data or "tab0" not in api_data["tables"]:
-            print("A resposta da API não contém os dados esperados.")
+        if "tables" in api_data and "tab0" in api_data["tables"]:
+            table_data = api_data["tables"]["tab0"]
+
+            # Processar as linhas para criar registros
+            data_list = []
+            for key, value in table_data.items():
+                record = {
+                    "Carteira": value.get("col0", "Não disponível"),
+                    "Ativo": value.get("col1", "Não disponível"),
+                    "Descrição": value.get("col2", "Não disponível"),
+                    "Saldo Bruto": value.get("col3", "Não disponível"),
+                }
+                data_list.append(record)
+
+            df_api = pd.DataFrame(data_list)
+            return df_api
+        else:
             return pd.DataFrame()
-
-        table_data = api_data["tables"]["tab0"]
-
-        data_list = []
-        for key, value in table_data.items():
-            record = {
-                'col0': value.get('col0', 'Não disponível'),
-                'col1': value.get('col1', 'Não disponível'),
-                'col2': value.get('col2', 'Não disponível'),
-                'col3': value.get('col3', 'Não disponível')
-            }
-            data_list.append(record)
-
-        df_api = pd.DataFrame(data_list)
-        print(f"Dados recuperados da API: {len(df_api)} registros.")
-        return df_api
-
     except requests.exceptions.RequestException as e:
         print(f"Erro de conexão: {e}")
         return pd.DataFrame()
@@ -74,23 +74,29 @@ def fetch_comdinheiro_data():
         print(f"Erro no formato da resposta: {e}")
         return pd.DataFrame()
 
+
 # Função para combinar os dados de ambas as fontes
 def fetch_data(tipo="postgres"):
-    print(f"Buscando dados da fonte: {tipo}")
+    print(f"Buscando dados da fonte: {tipo}")  # Debugging
     if tipo == "postgres":
+        # Retorna os dados do banco de dados para clientes e clientes ativos
         df = fetch_postgres_data()
         print("Dados do PostgreSQL carregados:")
-        print(df.head())
+        print(df.head())  # Exibe as primeiras linhas para depuração
         return df
     elif tipo == "api":
+        # Retorna os dados da API para o relatório gerencial
         df_api = fetch_comdinheiro_data()
         if df_api.empty:
             print("Erro ao recuperar dados da API ou dados vazios.")
-            return pd.DataFrame()
+            return pd.DataFrame()  # Retorna um DataFrame vazio se der erro
         else:
             print("Dados da API carregados:")
-            print(df_api.head())
+            print(
+                df_api.head()
+            )  # Exibe as primeiras linhas dos dados da API para depuração
             return df_api
+
 
 # Inicializando a aplicação Dash
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
@@ -101,16 +107,10 @@ app.config.suppress_callback_exceptions = True
 df_postgres = fetch_data(tipo="postgres")  # Carregar dados do banco para clientes
 df_api = fetch_data(tipo="api")  # Carregar dados da API para o relatório gerencial
 
-if not df_api.empty:
-    df_api = df_api.rename(columns={
-        'col0': 'Carteira',
-        'col1': 'Ativo',
-        'col2': 'Descrição',
-        'col3': 'Saldo Bruto'
-    })
-
 df_postgres["cliente_ativo"] = df_postgres["cliente_ativo"].str.strip().str.capitalize()
-df_postgres["perfil_risco_ips"] = pd.to_numeric(df_postgres["perfil_risco_ips"], errors="coerce")
+df_postgres["perfil_risco_ips"] = pd.to_numeric(
+    df_postgres["perfil_risco_ips"], errors="coerce"
+)
 
 # Gráficos
 fig_pie = px.pie(
@@ -119,7 +119,9 @@ fig_pie = px.pie(
     values="patrimonio",
     title="Distribuição de Patrimônio por Suitability",
 )
-fig_bar = px.bar(df_postgres, x="nome_cliente", y="patrimonio", title="Patrimônio por Cliente")
+fig_bar = px.bar(
+    df_postgres, x="nome_cliente", y="patrimonio", title="Patrimônio por Cliente"
+)
 
 # Layout da tela de autenticação
 auth_layout = html.Div(
@@ -185,7 +187,7 @@ sidebar = html.Div(
 
 footer = html.Div("\u00a9 2025 Finacap Investimentos Ltda", className="footer")
 
-dash_layout = html.Div(
+dashboard_layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
         sidebar,
@@ -249,7 +251,7 @@ tabela_clientes_page = html.Div(
         html.Div(
             [
                 dcc.Input(
-                    id="search-bar-clientes",
+                    id="search-bar",
                     type="text",
                     placeholder="Buscar...",
                     style={
@@ -260,7 +262,7 @@ tabela_clientes_page = html.Div(
                     },
                 ),
                 dcc.Dropdown(
-                    id="filter-column-clientes",
+                    id="filter-column",
                     options=[
                         {"label": "Todos", "value": "all"},
                         {"label": "Nome Cliente", "value": "nome_cliente"},
@@ -296,14 +298,15 @@ tabela_clientes_page = html.Div(
     ]
 )
 
-# Página de Relatório Gerencial
+
+# Ajuste no layout da página "Relatório Gerencial"
 relatorio_gerencial_page = html.Div(
     [
         html.H3("Relatório Gerencial Carteiras", className="page-title"),
         html.Div(
             [
                 dcc.Input(
-                    id="search-bar-relatorio",
+                    id="search-bar",
                     type="text",
                     placeholder="Buscar...",
                     style={
@@ -314,7 +317,7 @@ relatorio_gerencial_page = html.Div(
                     },
                 ),
                 dcc.Dropdown(
-                    id="filter-column-relatorio",
+                    id="filter-column",
                     options=[
                         {"label": "Todos", "value": "all"},
                         {"label": "Carteira", "value": "Carteira"},
@@ -336,7 +339,7 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Descrição", "id": "Descrição"},
                 {"name": "Saldo Bruto", "id": "Saldo Bruto"},
             ],
-            data=df_api.to_dict("records") if not df_api.empty else [],
+            data=fetch_comdinheiro_data().to_dict("records"),  # Dados da API
             style_table={"overflowX": "auto", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
@@ -348,13 +351,14 @@ relatorio_gerencial_page = html.Div(
     ]
 )
 
+
 # Callback para atualizar a tabela de relatórios gerenciais
 @app.callback(
     Output("relatorio-table", "data"),
     [
         Input("update-data-btn", "n_clicks"),
-        Input("search-bar-relatorio", "value"),
-        Input("filter-column-relatorio", "value"),
+        Input("search-bar", "value"),
+        Input("filter-column", "value"),
     ],
 )
 def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
@@ -362,23 +366,19 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
-    df_api = fetch_data(tipo="api")
+    # Usar dados da API para a tabela de Relatório Gerencial
+    df_api = fetch_comdinheiro_data()
 
     print("Dados carregados para Relatório Gerencial:")
     print(df_api.head())
 
     if df_api.empty:
-        return []
+        return []  # Retorna uma lista vazia se não houver dados
 
-    df_api = df_api.rename(columns={
-        'col0': 'Carteira',
-        'col1': 'Ativo',
-        'col2': 'Descrição',
-        'col3': 'Saldo Bruto'
-    })
-
+    # Garantir que os dados estejam sendo enviados corretamente
     filtered_df = df_api.copy()
 
+    # Aplicar busca
     if search_value:
         filtered_df = filtered_df[
             filtered_df.apply(
@@ -389,10 +389,12 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
             )
         ]
 
+    # Aplicar filtro de coluna
     if filter_column and filter_column != "all":
         filtered_df = filtered_df[[filter_column]]
 
     return filtered_df.to_dict("records")
+
 
 # Callback para alternar entre autenticação e dashboard
 @app.callback(
@@ -402,8 +404,9 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
 )
 def validar_token(n_clicks, n_submit, token):
     if (n_clicks > 0 or n_submit) and token == TOKEN_CORRETO:
-        return dash_layout
+        return dashboard_layout
     return auth_layout
+
 
 # Callback para redefinir a URL após logout
 @app.callback(
@@ -414,6 +417,7 @@ def reset_url_on_logout(content):
     if content == auth_layout:
         return "/"
     return dash.no_update
+
 
 # Callback para controle de rotas no dashboard
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
@@ -431,6 +435,7 @@ def display_page(pathname):
     else:
         return html.Div([html.H3("Página não encontrada!!", className="error-message")])
 
+
 # Callback para alternar visibilidade do campo de senha
 @app.callback(
     Output("token-input", "type"),
@@ -442,24 +447,26 @@ def toggle_password_visibility(n_clicks, current_type):
         return "text"
     return "password"
 
+
+# Callback combinado para atualizar a tabela de clientes
 @app.callback(
     Output("clientes-table", "data"),
     [
         Input("update-data-btn", "n_clicks"),
-        Input("search-bar-clientes", "value"),
-        Input("filter-column-clientes", "value"),
+        Input("search-bar", "value"),
+        Input("filter-column", "value"),
     ],
 )
-def update_clientes_table(n_clicks, search_value, filter_column):
-    ctx = dash.callback_context
+def update_clientes_table_or_data(n_clicks, search_value, filter_column):
+    ctx = dash.callback_context  # Obter contexto do callback
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
-    # Recarregar dados do PostgreSQL
-    df_postgres = fetch_data(tipo="postgres")
+    # Usar dados do banco para a tabela de Clientes
+    df_postgres = fetch_data(tipo="postgres")  # Dados do banco de dados
 
     filtered_df = df_postgres.copy()
 
-    # Filtrar por valor da busca
+    # Aplicar busca
     if search_value:
         filtered_df = filtered_df[
             filtered_df.apply(
@@ -470,7 +477,7 @@ def update_clientes_table(n_clicks, search_value, filter_column):
             )
         ]
 
-    # Filtrar por coluna específica
+    # Aplicar filtro de coluna
     if filter_column and filter_column != "all":
         filtered_df = filtered_df[[filter_column]]
 
@@ -482,13 +489,13 @@ app.layout = html.Div(
     [
         dcc.Location(
             id="auth-url", refresh=False
-        ),
+        ),  # Captura a URL inicial para controle de autenticação
         dcc.Location(
             id="url", refresh=False
-        ),
+        ),  # Captura a URL para navegação interna no dashboard
         html.Div(id="auth-page-content", children=auth_layout),
     ]
 )
 
 if __name__ == "__main__":
-   app.run_server(debug=True, port=8052)
+    app.run_server(debug=True, port=8052)
