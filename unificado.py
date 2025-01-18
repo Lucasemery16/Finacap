@@ -9,14 +9,14 @@ import requests
 import json
 
 # Token de autenticação
-TOKEN_CORRETO = "#Finacap@"
+TOKEN_CORRETO = "1"
 
 # Função para obter os dados do banco de dados PostgreSQL
 def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="postgres",
         host="localhost",
         port="5432",
     )
@@ -442,23 +442,24 @@ def toggle_password_visibility(n_clicks, current_type):
         return "text"
     return "password"
 
-# Callback combinado para atualizar a tabela de clientes
 @app.callback(
     Output("clientes-table", "data"),
     [
         Input("update-data-btn", "n_clicks"),
-        Input("search-bar", "value"),
-        Input("filter-column", "value"),
+        Input("search-bar-clientes", "value"),
+        Input("filter-column-clientes", "value"),
     ],
 )
-def update_clientes_table_or_data(n_clicks, search_value, filter_column):
+def update_clientes_table(n_clicks, search_value, filter_column):
     ctx = dash.callback_context
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
 
+    # Recarregar dados do PostgreSQL
     df_postgres = fetch_data(tipo="postgres")
 
     filtered_df = df_postgres.copy()
 
+    # Filtrar por valor da busca
     if search_value:
         filtered_df = filtered_df[
             filtered_df.apply(
@@ -469,10 +470,12 @@ def update_clientes_table_or_data(n_clicks, search_value, filter_column):
             )
         ]
 
+    # Filtrar por coluna específica
     if filter_column and filter_column != "all":
         filtered_df = filtered_df[[filter_column]]
 
     return filtered_df.to_dict("records")
+
 
 # Layout principal
 app.layout = html.Div(
