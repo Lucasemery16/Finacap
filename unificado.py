@@ -137,7 +137,9 @@ auth_layout = html.Div(
                     type="password",
                     placeholder="Digite o token...",
                     className="input-field",
-                ),
+                    n_submit=0  # Adiciona esse parâmetro para capturar a submissão com a tecla Enter
+),
+
                 html.Button(
                     html.I(className="fa fa-eye"),
                     id="toggle-password",
@@ -178,7 +180,8 @@ sidebar = html.Div(
                     className="menu-item",
                 ),
                 dcc.Link("Lamina", href="/lamina", className="menu-item"),
-                dcc.Link("Sair", href="/sair", className="menu-item"),
+                dcc.Link("Sair", href="/login", className="menu-item"),
+
             ],
             className="menu-container",
         ),
@@ -201,11 +204,12 @@ dashboard_layout = html.Div(
 # Página de login com autenticação
 @app.callback(
     [Output("auth-page-content", "children"), Output("token-status", "children")],
-    [Input("submit-button", "n_clicks")],
+    [Input("submit-button", "n_clicks"), Input("token-input", "n_submit")],  # Adicionando Input para n_submit
     [State("token-input", "value")],
 )
-def validate_login(n_clicks, token_value):
-    if n_clicks > 0:
+def validate_login(n_clicks, n_submit, token_value):
+    # A função será chamada quando o botão for clicado ou o "Enter" for pressionado
+    if n_clicks > 0 or n_submit > 0:  # Verifica se o botão ou Enter foi pressionado
         if token_value == TOKEN_CORRETO:
             return dashboard_layout, ""
         else:
@@ -485,9 +489,9 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     return filtered_df.to_dict("records")
 
 
-# Callback para atualizar a página de conteúdo de acordo com a URL
 @app.callback(
-    Output("page-content", "children"), [Input("url", "pathname")]
+    Output("page-content", "children"),
+    [Input("url", "pathname")]
 )
 def display_page(pathname):
     if pathname in ["/clientes-ativos", "/"]:
@@ -498,6 +502,8 @@ def display_page(pathname):
         return relatorio_gerencial_page
     elif pathname == "/lamina":
         return lamina_page
+    elif pathname == "/login":
+        return auth_layout  # Quando a URL for "/login", retorna o layout de login
     else:
         return html.Div([html.H3("Página não encontrada!!", className="error-message")])
 
