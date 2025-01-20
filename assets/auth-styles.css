@@ -1,69 +1,88 @@
 /* Fundo da tela */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css");
+
+.eye-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.fa-eye,
+.fa-eye-slash {
+  font-size: 18px;
+  color: #555;
+}
+
 body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #1b1b32;
-    /* Cor de fundo */
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #1b1b32;
+  /* Cor de fundo */
 }
 
 /* Container principal para centralizar a caixa */
 .main-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
 /* Caixa branca onde fica o formulário */
 .auth-box {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    width: 250px;
-    /* Diminuí a largura da caixa */
-    text-align: center;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  width: 250px;
+  /* Diminuí a largura da caixa */
+  text-align: center;
 }
 
 /* Título dentro da caixa */
 .title {
-    margin-bottom: 20px;
-    color: #333;
+  margin-bottom: 20px;
+  color: #333;
 }
 
 /* Campo de entrada (token) */
 .input-field {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-    box-sizing: border-box;
-    /* Garante que o padding não aumente a largura total */
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  /* Garante que o padding não aumente a largura total */
 }
 
 /* Botão de enviar */
 .button {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background-color: #E91E63;
-    /* Cor que você preferir */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-    /* Fazendo o botão ocupar toda a largura da caixa */
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #e91e63;
+  /* Cor que você preferir */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  /* Fazendo o botão ocupar toda a largura da caixa */
 }
 
 .button:hover {
-    background-color: #d81b60;
+  background-color: #d81b60;
 }
 
 /* Mensagem de status de erro ou sucesso */
 .status-message {
-    margin-top: 15px;
-    font-weight: bold;
+  margin-top: 15px;
+  font-weight: bold;
 }

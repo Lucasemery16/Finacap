@@ -1,4 +1,19 @@
 /* Sidebar */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css");
+
+.eye-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: -30px;
+}
+
+.fa-eye,
+.fa-eye-slash {
+  font-size: 18px;
+  color: #555;
+}
+
 .sidebar {
   position: fixed;
   top: 0;
@@ -44,15 +59,30 @@
   text-decoration: none;
 }
 
-/* Conteúdo Principal */
-.content {
-  margin-left: 270px;
-  padding: 20px 30px;
-  background: #002855; /* Fundo azul */
-  color: rgb(3, 3, 3); /* Texto branco */
-  font-family: "Poppins", sans-serif;
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Conteúdo Principal */
+.content {
+  flex: 1; /* Faz o conteúdo crescer para empurrar o rodapé para o final */
+  padding: 20px;
+  margin-left: 270px; /* Para ajustar à sidebar fixa */
+  background: #002855;
+  color: rgb(3, 3, 3);
+  font-family: "Poppins", sans-serif;
+}
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Ocupa o espaço restante do body */
+  min-height: 100vh;
+}
 /* Títulos */
 .page-title {
   font-size: 24px;
@@ -203,12 +233,11 @@
   background-color: #dce4f0; /* Fundo mais claro ao passar o mouse */
 }
 
-/* Rodapé */
+/* O rodapé sempre estará fixo ao final */
 .footer {
   text-align: center;
   font-size: 14px;
   color: white;
-  margin-top: 20px;
   padding: 10px 0;
   background: #001a40; /* Azul escuro */
 }

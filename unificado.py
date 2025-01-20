@@ -192,14 +192,17 @@ sidebar = html.Div(
 
 footer = html.Div("\u00a9 2025 Finacap Investimentos Ltda", className="footer")
 
+# Layout principal do dashboard
 dashboard_layout = html.Div(
-    [
+    className="dashboard-container",
+    children=[
         dcc.Location(id="url", refresh=False),
-        sidebar,
-        html.Div(id="page-content", className="content"),
-        footer,
-    ]
+        sidebar,  # Sidebar fixa
+        html.Div(id="page-content", className="content"),  # Conteúdo dinâmico
+        footer,  # Rodapé fixo
+    ],
 )
+
 
 # Página de login com autenticação
 @app.callback(
