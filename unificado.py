@@ -7,17 +7,26 @@ import pandas as pd
 import psycopg2
 import requests
 import json
+from flask_caching import Cache
 
 # Token de autenticação
 TOKEN_CORRETO = "#Finacap@"
 
+# Inicializando o aplicativo Dash
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
+app.title = "Dashboard Finacap"
+app.config.suppress_callback_exceptions = True
 
-# Função para obter os dados do banco de dados PostgreSQL
+# Inicialize o cache
+cache = Cache(app.server, config={'CACHE_TYPE': 'simple'})
+
+# Função para obter os dados do banco de dados PostgreSQL com cache
+@cache.memoize(timeout=60)  # Cache por 60 segundos
 def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="@QWEasd132",
+        password="Nautico1901",
         host="localhost",
         port="5432",
     )
@@ -30,8 +39,8 @@ def fetch_postgres_data():
     conn.close()
     return df
 
-
-# Função para obter os dados da API do Comdinheiro com alterações
+# Função para obter os dados da API do Comdinheiro com alterações e cache
+@cache.memoize(timeout=60)  # Cache por 60 segundos
 def fetch_comdinheiro_data():
     url = "https://www.comdinheiro.com.br/Clientes/API/EndPoint001.php"
     querystring = {"code": "import_data"}
@@ -74,7 +83,6 @@ def fetch_comdinheiro_data():
         print(f"Erro no formato da resposta: {e}")
         return pd.DataFrame()
 
-
 # Função para combinar os dados de ambas as fontes
 def fetch_data(tipo="postgres"):
     print(f"Buscando dados da fonte: {tipo}")  # Debugging
@@ -96,12 +104,6 @@ def fetch_data(tipo="postgres"):
                 df_api.head()
             )  # Exibe as primeiras linhas dos dados da API para depuração
             return df_api
-
-
-# Inicializando a aplicação Dash
-app = dash.Dash(__name__, suppress_callback_exceptions=True)
-app.title = "Dashboard Finacap"
-app.config.suppress_callback_exceptions = True
 
 # Dados iniciais - Carrega tanto os dados do banco de dados quanto da API
 df_postgres = fetch_data(tipo="postgres")  # Carregar dados do banco para clientes
@@ -196,6 +198,21 @@ dashboard_layout = html.Div(
     ]
 )
 
+# Página de login com autenticação
+@app.callback(
+    [Output("auth-page-content", "children"), Output("token-status", "children")],
+    [Input("submit-button", "n_clicks")],
+    [State("token-input", "value")],
+)
+def validate_login(n_clicks, token_value):
+    if n_clicks > 0:
+        if token_value == TOKEN_CORRETO:
+            return dashboard_layout, ""
+        else:
+            return auth_layout, "Token inválido! Tente novamente."
+    return auth_layout, ""
+
+
 # Páginas do dashboard
 clientes_ativos_page = html.Div(
     [
@@ -245,6 +262,7 @@ clientes_ativos_page = html.Div(
     ]
 )
 
+# Página de clientes
 tabela_clientes_page = html.Div(
     [
         html.H3("Tabela de Clientes", className="page-title"),
@@ -298,7 +316,6 @@ tabela_clientes_page = html.Div(
     ]
 )
 
-
 # Ajuste no layout da página "Relatório Gerencial"
 relatorio_gerencial_page = html.Div(
     [
@@ -351,8 +368,7 @@ relatorio_gerencial_page = html.Div(
     ]
 )
 
-
-# Callback para atualizar a tabela de relatórios gerenciais
+# Callbacks para atualizar as tabelas e gráficos
 @app.callback(
     Output("relatorio-table", "data"),
     [
@@ -396,31 +412,9 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     return filtered_df.to_dict("records")
 
 
-# Callback para alternar entre autenticação e dashboard
 @app.callback(
-    Output("auth-page-content", "children"),
-    [Input("submit-button", "n_clicks"), Input("token-input", "n_submit")],
-    [State("token-input", "value")],
+    Output("page-content", "children"), [Input("url", "pathname")]
 )
-def validar_token(n_clicks, n_submit, token):
-    if (n_clicks > 0 or n_submit) and token == TOKEN_CORRETO:
-        return dashboard_layout
-    return auth_layout
-
-
-# Callback para redefinir a URL após logout
-@app.callback(
-    Output("auth-url", "pathname"),
-    [Input("auth-page-content", "children")],
-)
-def reset_url_on_logout(content):
-    if content == auth_layout:
-        return "/"
-    return dash.no_update
-
-
-# Callback para controle de rotas no dashboard
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
     if pathname in ["/clientes-ativos", "/"]:
         return clientes_ativos_page
@@ -428,10 +422,6 @@ def display_page(pathname):
         return tabela_clientes_page
     elif pathname == "/relatorio-gerencial":
         return relatorio_gerencial_page
-    elif pathname == "/lamina":
-        return lamina_page
-    elif pathname == "/sair":
-        return auth_layout
     else:
         return html.Div([html.H3("Página não encontrada!!", className="error-message")])
 
@@ -448,51 +438,11 @@ def toggle_password_visibility(n_clicks, current_type):
     return "password"
 
 
-# Callback combinado para atualizar a tabela de clientes
-@app.callback(
-    Output("clientes-table", "data"),
-    [
-        Input("update-data-btn", "n_clicks"),
-        Input("search-bar", "value"),
-        Input("filter-column", "value"),
-    ],
-)
-def update_clientes_table_or_data(n_clicks, search_value, filter_column):
-    ctx = dash.callback_context  # Obter contexto do callback
-    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
-
-    # Usar dados do banco para a tabela de Clientes
-    df_postgres = fetch_data(tipo="postgres")  # Dados do banco de dados
-
-    filtered_df = df_postgres.copy()
-
-    # Aplicar busca
-    if search_value:
-        filtered_df = filtered_df[
-            filtered_df.apply(
-                lambda row: row.astype(str)
-                .str.contains(search_value, case=False)
-                .any(),
-                axis=1,
-            )
-        ]
-
-    # Aplicar filtro de coluna
-    if filter_column and filter_column != "all":
-        filtered_df = filtered_df[[filter_column]]
-
-    return filtered_df.to_dict("records")
-
-
 # Layout principal
 app.layout = html.Div(
     [
-        dcc.Location(
-            id="auth-url", refresh=False
-        ),  # Captura a URL inicial para controle de autenticação
-        dcc.Location(
-            id="url", refresh=False
-        ),  # Captura a URL para navegação interna no dashboard
+        dcc.Location(id="auth-url", refresh=False),
+        dcc.Location(id="url", refresh=False),
         html.Div(id="auth-page-content", children=auth_layout),
     ]
 )
