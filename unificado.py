@@ -213,7 +213,60 @@ def validate_login(n_clicks, token_value):
     return auth_layout, ""
 
 
-# Páginas do dashboard
+# Ajuste no layout da página "Relatório Gerencial"
+relatorio_gerencial_page = html.Div(
+    [
+        html.H3("Relatório Gerencial Carteiras", className="page-title"),
+        html.Div(
+            [
+                dcc.Input(
+                    id="search-bar",
+                    type="text",
+                    placeholder="Buscar...",
+                    style={
+                        "marginBottom": "10px",
+                        "width": "50%",
+                        "padding": "5px",
+                        "fontSize": "14px",
+                    },
+                ),
+                dcc.Dropdown(
+                    id="filter-column",
+                    options=[
+                        {"label": "Todos", "value": "all"},
+                        {"label": "Carteira", "value": "Carteira"},
+                        {"label": "Ativo", "value": "Ativo"},
+                        {"label": "Descrição", "value": "Descrição"},
+                        {"label": "Saldo Bruto", "value": "Saldo Bruto"},
+                    ],
+                    placeholder="Filtrar por coluna...",
+                    style={"marginBottom": "10px", "width": "50%"},
+                ),
+            ],
+            style={"display": "flex", "justifyContent": "space-between"},
+        ),
+        dt.DataTable(
+            id="relatorio-table",
+            columns=[
+                {"name": "Carteira", "id": "Carteira"},
+                {"name": "Ativo", "id": "Ativo"},
+                {"name": "Descrição", "id": "Descrição"},
+                {"name": "Saldo Bruto", "id": "Saldo Bruto"},
+            ],
+            data=fetch_comdinheiro_data().to_dict("records"),  # Dados da API
+            style_table={"overflowX": "auto", "maxHeight": "500px"},
+            style_header={
+                "backgroundColor": "#1b51b1",
+                "color": "white",
+                "fontWeight": "bold",
+            },
+            style_cell={"textAlign": "center", "padding": "10px"},
+        ),
+    ]
+)
+
+
+# Página de clientes
 clientes_ativos_page = html.Div(
     [
         html.H3("Clientes Ativos", className="page-title"),
@@ -316,57 +369,62 @@ tabela_clientes_page = html.Div(
     ]
 )
 
-# Ajuste no layout da página "Relatório Gerencial"
-relatorio_gerencial_page = html.Div(
+# Página "Lamina"
+lamina_page = html.Div(
     [
-        html.H3("Relatório Gerencial Carteiras", className="page-title"),
-        html.Div(
-            [
-                dcc.Input(
-                    id="search-bar",
-                    type="text",
-                    placeholder="Buscar...",
-                    style={
-                        "marginBottom": "10px",
-                        "width": "50%",
-                        "padding": "5px",
-                        "fontSize": "14px",
-                    },
-                ),
-                dcc.Dropdown(
-                    id="filter-column",
-                    options=[
-                        {"label": "Todos", "value": "all"},
-                        {"label": "Carteira", "value": "Carteira"},
-                        {"label": "Ativo", "value": "Ativo"},
-                        {"label": "Descrição", "value": "Descrição"},
-                        {"label": "Saldo Bruto", "value": "Saldo Bruto"},
-                    ],
-                    placeholder="Filtrar por coluna...",
-                    style={"marginBottom": "10px", "width": "50%"},
-                ),
-            ],
-            style={"display": "flex", "justifyContent": "space-between"},
-        ),
+        html.H3("Selecione um Cliente", className="page-title"),
+        # Tabela de clientes
         dt.DataTable(
-            id="relatorio-table",
+            id="clientes-list-table",
             columns=[
-                {"name": "Carteira", "id": "Carteira"},
-                {"name": "Ativo", "id": "Ativo"},
-                {"name": "Descrição", "id": "Descrição"},
-                {"name": "Saldo Bruto", "id": "Saldo Bruto"},
+                {"name": "Código Finacap", "id": "codigo_finacap"},
+                {"name": "Nome Cliente", "id": "nome_cliente"},
+                {"name": "Gestor", "id": "gestor"},
+                {"name": "Suitability Cliente", "id": "suitability_cliente"},
+                {"name": "Patrimônio", "id": "patrimonio"},
             ],
-            data=fetch_comdinheiro_data().to_dict("records"),  # Dados da API
-            style_table={"overflowX": "auto", "maxHeight": "500px"},
+            data=df_postgres.to_dict("records"),
+            style_table={"overflowX": "auto"},
             style_header={
                 "backgroundColor": "#1b51b1",
                 "color": "white",
                 "fontWeight": "bold",
             },
             style_cell={"textAlign": "center", "padding": "10px"},
+            # Seleção de uma linha
+            row_selectable="single",
+            selected_rows=[],
         ),
+        # Div para mostrar as informações detalhadas do cliente selecionado
+        html.Div(id="client-detail-info", style={"marginTop": "20px"}),
     ]
 )
+
+# Callback para exibir as informações detalhadas do cliente
+@app.callback(
+    Output("client-detail-info", "children"),
+    [Input("clientes-list-table", "selected_rows")]
+)
+def display_client_details(selected_rows):
+    if selected_rows:
+        # Pegando o índice da linha selecionada
+        selected_row = selected_rows[0]
+        client_data = df_postgres.iloc[selected_row]
+        
+        # Detalhes do cliente selecionado
+        client_details = html.Div(
+            [
+                html.H4(f"Detalhes do Cliente: {client_data['nome_cliente']}"),
+                html.Div(f"Código Finacap: {client_data['codigo_finacap']}"),
+                html.Div(f"Gestor: {client_data['gestor']}"),
+                html.Div(f"Suitability Cliente: {client_data['suitability_cliente']}"),
+                html.Div(f"Patrimônio: R$ {client_data['patrimonio']:.2f}"),
+                html.Div(f"Perfil de Risco IPS: {client_data['perfil_risco_ips']}"),
+                html.Div(f"Tipo IPS: {client_data['tipo_ips']}"),
+            ]
+        )
+        return client_details
+    return html.Div("Selecione um cliente para ver os detalhes.")
 
 # Callbacks para atualizar as tabelas e gráficos
 @app.callback(
@@ -412,6 +470,7 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     return filtered_df.to_dict("records")
 
 
+# Callback para atualizar a página de conteúdo de acordo com a URL
 @app.callback(
     Output("page-content", "children"), [Input("url", "pathname")]
 )
@@ -422,9 +481,10 @@ def display_page(pathname):
         return tabela_clientes_page
     elif pathname == "/relatorio-gerencial":
         return relatorio_gerencial_page
+    elif pathname == "/lamina":
+        return lamina_page
     else:
         return html.Div([html.H3("Página não encontrada!!", className="error-message")])
-
 
 # Callback para alternar visibilidade do campo de senha
 @app.callback(
