@@ -12,7 +12,6 @@ from flask_caching import Cache
 # Token de autenticação
 TOKEN_CORRETO = "1"
 
-# Inicializando o aplicativo Dash
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = "Dashboard Finacap"
 app.config.suppress_callback_exceptions = True
