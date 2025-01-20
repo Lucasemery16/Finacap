@@ -371,86 +371,75 @@ tabela_clientes_page = html.Div(
 
 lamina_page = html.Div(
     [
-        html.H3("Selecione um Cliente", className="page-title"),
+        html.H3("Digite o Código Finacap do Cliente", className="page-title"),
         
-        # Tabela de clientes
-        dt.DataTable(
-            id="clientes-list-table",
-            columns=[
-                {"name": "Código Finacap", "id": "codigo_finacap"},
-                {"name": "Nome Cliente", "id": "nome_cliente"},
-                {"name": "Gestor", "id": "gestor"},
-                {"name": "Suitability Cliente", "id": "suitability_cliente"},
-                {"name": "Patrimônio", "id": "patrimonio"},
-            ],
-            data=df_postgres.to_dict("records"),
-            style_table={"overflowX": "auto"},
-            style_header={
-                "backgroundColor": "#1b51b1",
-                "color": "white",
-                "fontWeight": "bold",
-            },
-            style_cell={"textAlign": "center", "padding": "10px"},
-            row_selectable="single",
-            selected_rows=[],
+        # Barra de pesquisa para o código_finacap
+        dcc.Input(
+            id="codigo-finacap-input",
+            type="text",
+            placeholder="Digite o Código Finacap...",
+            style={"marginBottom": "10px", "width": "50%", "padding": "5px", "fontSize": "14px"},
         ),
         
-        # Seção de Detalhes
+        # Seção para mostrar os detalhes do cliente
         html.Div(id="client-detail-info", style={"marginTop": "20px"}),
     ]
 )
 
-# Callback para exibir as informações detalhadas do cliente
+# Callback para exibir as informações detalhadas do cliente com base no código_finacap
 @app.callback(
     Output("client-detail-info", "children"),
-    [Input("clientes-list-table", "selected_rows")]
+    [Input("codigo-finacap-input", "value")]
 )
-def display_client_details(selected_rows):
-    if selected_rows:
-        selected_row = selected_rows[0]
-        client_data = df_postgres.iloc[selected_row]
+def display_client_details(codigo_finacap):
+    if codigo_finacap:
+        # Filtra os dados do cliente com base no código_finacap
+        client_data = df_postgres[df_postgres["codigo_finacap"] == codigo_finacap]
         
-        # Detalhes do cliente
-        client_details = html.Div(
-            [
-                # Dados do Cliente
-                html.H4(f"1. DADOS - CLIENTE: {client_data['nome_cliente']}", style={"color": "white"}),
-                html.Div(f"Nome: {client_data['nome_cliente']}", style={"color": "white"}),
-                html.Div(f"Gestor: {client_data['gestor']}", style={"color": "white"}),
-                html.Div(f"Conta: {client_data['codigo_finacap']}", style={"color": "white"}),
-                html.Div(f"Perfil: {client_data['suitability_cliente']}", style={"color": "white"}),
-                
-                # Carteira
-                html.H4("2. CARTEIRA", style={"color": "white"}),
-                html.Div(f"Patrimônio Líquido: R$ {client_data['patrimonio']:.2f}", style={"color": "white"}),
-                html.Div(f"Saldo em conta: Não disponível", style={"color": "white"}),  # Este dado pode ser adicionado quando você fornecer o valor
+        if not client_data.empty:
+            # Detalhes do cliente
+            client_details = html.Div(
+                [
+                    # Dados do Cliente
+                    html.H4(f"1. DADOS - CLIENTE: {client_data['nome_cliente'].iloc[0]}", style={"color": "white"}),
+                    html.Div(f"Nome: {client_data['nome_cliente'].iloc[0]}", style={"color": "white"}),
+                    html.Div(f"Gestor: {client_data['gestor'].iloc[0]}", style={"color": "white"}),
+                    html.Div(f"Conta: {client_data['codigo_finacap'].iloc[0]}", style={"color": "white"}),
+                    html.Div(f"Perfil: {client_data['suitability_cliente'].iloc[0]}", style={"color": "white"}),
 
-                # Monitoramento
-                html.H4("3. MONITORAMENTO", style={"color": "white"}),
-                html.Div(f"Alocação Carteira: Não disponível", style={"color": "white"}),
-                html.Div(f"Alocação Estratégica: Não disponível", style={"color": "white"}),
-                html.Div(f"Alocação Tática: Não disponível", style={"color": "white"}),
-                html.Div(f"Minimo: Não disponível", style={"color": "white"}),
-                html.Div(f"Máximo: Não disponível", style={"color": "white"}),
-                
-                # Rebalanceamento
-                html.H4("4. REBALANCEAMENTO", style={"color": "white"}),
-                html.Div(f"Rebalanceamento Estratégico: Não disponível", style={"color": "white"}),
-                html.Div(f"Rebalanceamento Máximo: Não disponível", style={"color": "white"}),
+                    # Carteira
+                    html.H4("2. CARTEIRA", style={"color": "white"}),
+                    html.Div(f"Patrimônio Líquido: R$ {client_data['patrimonio'].iloc[0]:.2f}", style={"color": "white"}),
+                    html.Div(f"Saldo em conta: Não disponível", style={"color": "white"}),
 
-                # Execução
-                html.H4("5. EXECUÇÃO", style={"color": "white"}),
-                html.Div(f"Mov. Ativo: Não disponível", style={"color": "white"}),
-                html.Div(f"Mov. Caixa: Não disponível", style={"color": "white"}),
+                    # Monitoramento
+                    html.H4("3. MONITORAMENTO", style={"color": "white"}),
+                    html.Div(f"Alocação Carteira: Não disponível", style={"color": "white"}),
+                    html.Div(f"Alocação Estratégica: Não disponível", style={"color": "white"}),
+                    html.Div(f"Alocação Tática: Não disponível", style={"color": "white"}),
+                    html.Div(f"Minimo: Não disponível", style={"color": "white"}),
+                    html.Div(f"Máximo: Não disponível", style={"color": "white"}),
 
-                # Total
-                html.H4("TOTAL", style={"color": "white"}),
-                html.Div(f"Saldo em conta após movimentações: Não disponível", style={"color": "white"}),
+                    # Rebalanceamento
+                    html.H4("4. REBALANCEAMENTO", style={"color": "white"}),
+                    html.Div(f"Rebalanceamento Estratégico: Não disponível", style={"color": "white"}),
+                    html.Div(f"Rebalanceamento Máximo: Não disponível", style={"color": "white"}),
 
-            ]
-        )
-        return client_details
-    return html.Div("Selecione um cliente para ver os detalhes.")
+                    # Execução
+                    html.H4("5. EXECUÇÃO", style={"color": "white"}),
+                    html.Div(f"Mov. Ativo: Não disponível", style={"color": "white"}),
+                    html.Div(f"Mov. Caixa: Não disponível", style={"color": "white"}),
+
+                    # Total
+                    html.H4("TOTAL", style={"color": "white"}),
+                    html.Div(f"Saldo em conta após movimentações: Não disponível", style={"color": "white"}),
+
+                ]
+            )
+            return client_details
+        else:
+            return html.Div("Cliente não encontrado. Verifique o código e tente novamente.", style={"color": "red"})
+    return html.Div("Digite um código para buscar os detalhes do cliente.", style={"color": "white"})
 
 # Callbacks para atualizar as tabelas e gráficos
 @app.callback(
