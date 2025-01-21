@@ -25,7 +25,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="@QWEasd132",
         host="localhost",
         port="5432",
     )
@@ -47,7 +47,7 @@ def fetch_comdinheiro_data():
     payload = {
         "username": "consulta.finacap",
         "password": "#Consult@finac@p2025",
-        "URL": "RelatorioGerencialCarteiras001.php?&data_analise=10012025",
+        "URL": "RelatorioGerencialCarteiras001.php?&data_analise=14012025&data_ini=&nome_portfolio=&variaveis=nome_portfolio+ativo+desc+saldo_bruto+minha_variavel(estrategia01)+minha_variavel(estrategia02)+data_analise+tipo_ativo+Pu+instituicao_financeira+prazo_liquidez+minha_variavel(serie_moeda)&filtro=all&ativo=&filtro_IF=todos&relat_alias=&layout=0&layoutB=0&num_casas=&enviar_email=0&portfolio_editavel=&filtro_id=",
         "format": "json3",
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -253,8 +253,8 @@ relatorio_gerencial_page = html.Div(
                         {"label": "Ativo", "value": "Ativo"},
                         {"label": "Descrição", "value": "Descrição"},
                         {"label": "Saldo Bruto", "value": "Saldo Bruto"},
-                        {"label": "Minha Variavel 01", "value": "Minha Variavel 01"},
-                        {"label": "Minha Variavel 02", "value": "Minha Variavel 02"},
+                        {"label": "minha_variavel(estrategia01)", "value": "minha_variavel(estrategia01)"},
+                        {"label": "minha_variavel(estrategia02)", "value": "minha_variavel(estrategia02)"},
                         {"label": "Data analise", "value": "Data analise"},
                         {"label": "Tipo ativo", "value": "Tipo ativo"},
                         {"label": "PU", "value": "PU"},
@@ -276,8 +276,8 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Ativo", "id": "Ativo"},
                 {"name": "Descrição", "id": "Descrição"},
                 {"name": "Saldo Bruto", "id": "Saldo Bruto"},
-                {"name": "Minha Variavel 01", "id": "Minha Variavel 01"},
-                {"name": "Minha Variavel 02", "id": "Minha Variavel 02"},
+                {"name": "minha_variavel(estrategia01)", "id": "minha_variavel(estrategia01)"},
+                {"name": "minha_variavel(estrategia02)", "id": "minha_variavel(estrategia02)"},
                 {"name": "Data analise", "id": "Data analise"},
                 {"name": "Tipo ativo", "id": "Tipo ativo"},
                 {"name": "PU", "id": "PU"},
