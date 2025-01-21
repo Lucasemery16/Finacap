@@ -25,7 +25,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="postgres",
+        password="Nautico1901",
         host="localhost",
         port="5432",
     )
@@ -68,6 +68,7 @@ def fetch_comdinheiro_data():
                     "Ativo": value.get("col1", "Não disponível"),
                     "Descrição": value.get("col2", "Não disponível"),
                     "Saldo Bruto": value.get("col3", "Não disponível"),
+                    
                 }
                 data_list.append(record)
 
