@@ -68,7 +68,15 @@ def fetch_comdinheiro_data():
                     "Ativo": value.get("col1", "Não disponível"),
                     "Descrição": value.get("col2", "Não disponível"),
                     "Saldo Bruto": value.get("col3", "Não disponível"),
-                    
+                    "Minha variavel 01": value.get("col4", "Não disponível"),
+                    "Minha variavel 02": value.get("col5", "Não disponível"),
+                    "Data analise": value.get("col6", "Não disponível"),
+                    "Tipo ativo": value.get("col7", "Não disponível"),
+                    "PU": value.get("col8", "Não disponível"),
+                    "Instituicao financeira": value.get("col9", "Não disponível"),
+                    "Prazo da liquidez": value.get("col10", "Não disponível"),
+                    "minha_variavel(serie_moeda)": value.get("col11", "Não disponível"),
+
                 }
                 data_list.append(record)
 
@@ -245,6 +253,15 @@ relatorio_gerencial_page = html.Div(
                         {"label": "Ativo", "value": "Ativo"},
                         {"label": "Descrição", "value": "Descrição"},
                         {"label": "Saldo Bruto", "value": "Saldo Bruto"},
+                        {"label": "Minha Variavel 01", "value": "Minha Variavel 01"},
+                        {"label": "Minha Variavel 02", "value": "Minha Variavel 02"},
+                        {"label": "Data analise", "value": "Data analise"},
+                        {"label": "Tipo ativo", "value": "Tipo ativo"},
+                        {"label": "PU", "value": "PU"},
+                        {"label": "Instituicao financeira", "value": "Instituicao financeira"},
+                        {"label": "Prazo da liquidez", "value": "Prazo da liquidez"},
+                        {"label": "minha_variavel(serie_moeda)", "value": "minha_variavel(serie_moeda)"},
+
                     ],
                     placeholder="Filtrar por coluna...",
                     style={"marginBottom": "10px", "width": "50%"},
@@ -259,6 +276,14 @@ relatorio_gerencial_page = html.Div(
                 {"name": "Ativo", "id": "Ativo"},
                 {"name": "Descrição", "id": "Descrição"},
                 {"name": "Saldo Bruto", "id": "Saldo Bruto"},
+                {"name": "Minha Variavel 01", "id": "Minha Variavel 01"},
+                {"name": "Minha Variavel 02", "id": "Minha Variavel 02"},
+                {"name": "Data analise", "id": "Data analise"},
+                {"name": "Tipo ativo", "id": "Tipo ativo"},
+                {"name": "PU", "id": "PU"},
+                {"name": "Instituicao financeira", "id": "Instituicao financeira"},
+                {"name": "Prazo da liquidez", "id": "Prazo da liquidez"},
+                {"name": "minha_variavel(serie_moeda)", "id": "minha_variavel(serie_moeda)"},
             ],
             data=fetch_comdinheiro_data().to_dict("records"),  # Dados da API
             style_table={"overflowX": "auto", "maxHeight": "500px"},
