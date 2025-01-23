@@ -188,8 +188,12 @@ sidebar = html.Div(
                     className="menu-item",
                 ),
                 dcc.Link("Lamina", href="/lamina", className="menu-item"),
+                dcc.Link(
+                    "Enquadramento - IPS",
+                    href="/enquadramento-ips",
+                    className="menu-item",
+                ),
                 dcc.Link("Sair", href="/login", className="menu-item"),
-
             ],
             className="menu-container",
         ),
@@ -564,6 +568,8 @@ def display_page(pathname):
         return relatorio_gerencial_page
     elif pathname == "/lamina":
         return lamina_page
+    elif pathname == "/enquadramento-ips":
+        return enquadramento_ips_page
     elif pathname == "/login":
         return auth_layout  # Quando a URL for "/login", retorna o layout de login
     else:
@@ -589,6 +595,75 @@ app.layout = html.Div(
         html.Div(id="auth-page-content", children=auth_layout),
     ]
 )
+
+# Layout da página Enquadramento - IPS
+enquadramento_ips_page = html.Div(
+    [
+        html.H3("Enquadramento - IPS", className="page-title"),
+        html.Div(
+            [
+                html.P(
+                    "Conteúdo específico relacionado ao enquadramento IPS será exibido aqui.",
+                    style={"fontSize": "16px"},
+                ),
+                # Você pode adicionar mais componentes aqui conforme necessário
+            ],
+            className="content-container",
+        ),
+    ]
+)
+
+# Layout da página Enquadramento - IPS
+enquadramento_ips_page = html.Div(
+    [
+        html.H3("Enquadramento - IPS", className="page-title"),
+        dt.DataTable(
+            id="enquadramento-ips-table",
+            columns=[
+                {"name": ["", "Cliente"], "id": "Cliente"},
+                {"name": ["", "Responsável"], "id": "Responsavel"},
+                {"name": ["", "Patrimônio Líquido"], "id": "Patrimonio_Liquido"},
+                {"name": ["Selic", "Atual"], "id": "Selic_Atual"},
+                {"name": ["Selic", "Estratégica"], "id": "Selic_Estrategica"},
+                {"name": ["Crédito Privado Pós", "Atual"], "id": "Credito_Privado_Pos_Atual"},
+                {"name": ["Crédito Privado Pós", "Estratégica"], "id": "Credito_Privado_Pos_Estrategica"},
+                {"name": ["IPCA/Pré Fixado", "Atual"], "id": "IPCA_Pre_Atual"},
+                {"name": ["IPCA/Pré Fixado", "Estratégica"], "id": "IPCA_Pre_Estrategico"},
+                {"name": ["Renda Variável", "Atual"], "id": "Renda_Variavel_Atual"},
+                {"name": ["Renda Variável", "Estratégica"], "id": "Renda_Variavel_Estrategico"},
+                {"name": ["Offshore", "Atual"], "id": "Offshore_Atual"},
+                {"name": ["Offshore", "Estratégica"], "id": "Offshore_Estrategico"},
+                {"name": ["Alternativo", "Atual"], "id": "Alternativo_Atual"},
+                {"name": ["Alternativo", "Estratégica"], "id": "Alternativo_Estrategico"},
+                {"name": ["", "OK/NA"], "id": "OK_NA"},
+                {"name": ["", "CP"], "id": "CP"},
+                {"name": ["", "Imediato"], "id": "Imediato"},
+                {"name": ["", "(dias)"], "id": "Dias"},
+            ],
+            data=[
+                # Dados fictícios para teste
+                {
+                    "Cliente": "Exemplo 1", "Responsavel": "Responsável 1", "Patrimonio_Liquido": 1000000,
+                    "Selic_Atual": 10, "Selic_Estrategica": 15, "Credito_Privado_Pos_Atual": 20,
+                    "Credito_Privado_Pos_Estrategica": 25, "IPCA_Pre_Atual": 30, "IPCA_Pre_Estrategico": 35,
+                    "Renda_Variavel_Atual": 40, "Renda_Variavel_Estrategico": 45, "Offshore_Atual": 50,
+                    "Offshore_Estrategico": 55, "Alternativo_Atual": 60, "Alternativo_Estrategico": 65,
+                    "OK_NA": "OK", "CP": 5, "Imediato": "Sim", "Dias": 30
+                },
+            ],
+            merge_duplicate_headers=True,  # Habilita cabeçalhos agrupados
+            style_table={"overflowX": "auto"},
+            style_header={
+                "backgroundColor": "#1b51b1",
+                "color": "white",
+                "fontWeight": "bold",
+                "textAlign": "center",
+            },
+            style_cell={"textAlign": "center", "padding": "5px"},
+        ),
+    ]
+)
+
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8052)
