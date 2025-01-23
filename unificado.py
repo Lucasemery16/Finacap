@@ -516,6 +516,7 @@ def display_client_details(codigo_finacap):
         Input("filter-column", "value"),
     ],
 )
+
 def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     print("Atualizando Relatório Gerencial...")
     ctx = dash.callback_context
@@ -533,13 +534,11 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     # Garantir que os dados estejam sendo enviados corretamente
     filtered_df = df_api.copy()
 
-    # Aplicar busca
+    # Aplicar busca global
     if search_value:
         filtered_df = filtered_df[
             filtered_df.apply(
-                lambda row: row.astype(str)
-                .str.contains(search_value, case=False)
-                .any(),
+                lambda row: search_value.lower() in row.astype(str).str.lower().to_string(),
                 axis=1,
             )
         ]
@@ -549,6 +548,7 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
         filtered_df = filtered_df[[filter_column]]
 
     return filtered_df.to_dict("records")
+
 
 
 @app.callback(
