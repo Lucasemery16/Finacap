@@ -281,7 +281,7 @@ def validate_login(n_clicks, n_submit, token_value):
 # Ajuste no layout da página "Relatório Gerencial"
 relatorio_gerencial_page = html.Div(
     [
-        html.H3("Relatório Gerencial Carteiras", className="page-title"),
+        html.H3("Relatório Gerencial Carteiras", className="page-title", style={"textAlign": "center", "color": "#ffffff"}),
         html.Div(
             [
                 dcc.Input(
@@ -289,10 +289,17 @@ relatorio_gerencial_page = html.Div(
                     type="text",
                     placeholder="Buscar...",
                     style={
-                        "marginBottom": "10px",
-                        "width": "50%",
-                        "padding": "5px",
-                        "fontSize": "14px",
+                        "marginBottom": "20px",
+                        "width": "80%",
+                        "padding": "10px",
+                        "fontSize": "18px",
+                        "borderRadius": "10px",
+                        "border": "1px solid #00aaff",
+                        "backgroundColor": "#ffffff",
+                        "color": "#000000",
+                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+                        "display": "block",
+                        "margin": "0 auto",
                     },
                 ),
                 dcc.Dropdown(
@@ -311,13 +318,24 @@ relatorio_gerencial_page = html.Div(
                         {"label": "Instituicao financeira", "value": "Instituicao financeira"},
                         {"label": "Prazo da liquidez", "value": "Prazo da liquidez"},
                         {"label": "minha_variavel(serie_moeda)", "value": "minha_variavel(serie_moeda)"},
-
                     ],
                     placeholder="Filtrar por coluna...",
-                    style={"marginBottom": "10px", "width": "50%"},
+                    style={
+                        "marginBottom": "10px",
+                        "width": "50%",
+                        "padding": "10px",
+                        "fontSize": "16px",
+                        "borderRadius": "10px",
+                        "border": "1px solid #00aaff",
+                        "backgroundColor": "#ffffff",
+                        "color": "#000000",
+                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+                        "display": "block",
+                        "margin": "0 auto",
+                    },
                 ),
             ],
-            style={"display": "flex", "justifyContent": "space-between"},
+            style={"textAlign": "center"},
         ),
         dt.DataTable(
             id="relatorio-table",
@@ -346,6 +364,7 @@ relatorio_gerencial_page = html.Div(
         ),
     ]
 )
+
 
 
 # Página de clientes
@@ -425,7 +444,7 @@ def update_relatorio_table(search_value, filter_column):
 # Página de clientes
 tabela_clientes_page = html.Div(
     [
-        html.H3("Tabela de Clientes", className="page-title"),
+        html.H3("Tabela de Clientes", className="page-title", style={"textAlign": "center", "color": "#ffffff"}),
         html.Div(
             [
                 dcc.Input(
@@ -434,10 +453,17 @@ tabela_clientes_page = html.Div(
                     placeholder="Buscar em todas as colunas...",
                     debounce=True,  # Atualiza somente após o término da digitação
                     style={
-                        "marginBottom": "10px",
-                        "width": "50%",
-                        "padding": "5px",
-                        "fontSize": "14px",
+                        "marginBottom": "20px",
+                        "width": "80%",
+                        "padding": "10px",
+                        "fontSize": "18px",
+                        "borderRadius": "10px",
+                        "border": "1px solid #00aaff",
+                        "backgroundColor": "#ffffff",
+                        "color": "#000000",
+                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+                        "display": "block",
+                        "margin": "0 auto",
                     },
                 ),
                 dcc.Dropdown(
@@ -460,12 +486,19 @@ tabela_clientes_page = html.Div(
                     style={
                         "marginBottom": "10px",
                         "width": "50%",
-                        "padding": "5px",
-                        "fontSize": "14px",
+                        "padding": "10px",
+                        "fontSize": "16px",
+                        "borderRadius": "10px",
+                        "border": "1px solid #00aaff",
+                        "backgroundColor": "#ffffff",
+                        "color": "#000000",
+                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+                        "display": "block",
+                        "margin": "0 auto",
                     },
                 ),
             ],
-            style={"display": "flex", "justifyContent": "space-between"},
+            style={"textAlign": "center"},
         ),
         dt.DataTable(
             id="clientes-table",
@@ -482,6 +515,7 @@ tabela_clientes_page = html.Div(
         ),
     ]
 )
+
 
 
 lamina_page = html.Div(
