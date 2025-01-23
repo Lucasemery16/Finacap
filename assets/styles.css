@@ -14,6 +14,7 @@
   color: #555;
 }
 
+/* Sidebar responsiva com menu hambúrguer */
 .sidebar {
   position: fixed;
   top: 0;
@@ -21,12 +22,49 @@
   bottom: 0;
   width: 250px;
   padding: 20px;
-  background: white; /* Fundo branco */
-  color: #002855; /* Texto azul */
+  background: white;
+  color: #002855;
   border-right: 2px solid #e3e6eb;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   font-family: "Poppins", sans-serif;
+  transition: transform 0.3s ease, width 0.3s ease;
+  z-index: 1000;
 }
+
+.sidebar.collapsed {
+  transform: translateX(-250px); /* Move para fora da tela */
+}
+
+.sidebar.expanded {
+  transform: translateX(0); /* Retorna à posição original */
+}
+
+.menu-toggle {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1100;
+  background: #002855;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  margin-left: 270px; /* Ajuste para a sidebar expandida */
+  transition: margin-left 0.3s ease;
+}
+
+.content.collapsed {
+  margin-left: 20px; /* Ajuste para a sidebar colapsada */
+}
+
+
 
 .logo {
   width: 80%;

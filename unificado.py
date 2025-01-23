@@ -204,17 +204,63 @@ sidebar = html.Div(
 
 footer = html.Div("\u00a9 2025 Finacap Investimentos Ltda", className="footer")
 
-# Layout principal do dashboard
+# Layout principal do dashboard com menu hambúrguer
 dashboard_layout = html.Div(
     className="dashboard-container",
     children=[
         dcc.Location(id="url", refresh=False),
-        sidebar,  # Sidebar fixa
-        html.Div(id="page-content", className="content"),  # Conteúdo dinâmico
+        html.Button(
+            html.I(className="fas fa-bars"),  # Ícone do menu
+            id="menu-toggle",
+            className="menu-toggle",
+        ),
+        html.Div(id="sidebar", className="sidebar expanded", children=[
+            html.Img(src="/assets/logo_finacap.png", className="logo"),
+            html.H2("Dashboard Finacap", className="title"),
+            html.Hr(),
+            html.Div(
+                [
+                    dcc.Link(
+                        "Clientes Ativos", href="/clientes-ativos", className="menu-item"
+                    ),
+                    dcc.Link("Clientes", href="/clientes", className="menu-item"),
+                    dcc.Link(
+                        "Revisões Pendentes",
+                        href="/revisoes-pendentes",
+                        className="menu-item",
+                    ),
+                    dcc.Link(
+                        "Relatório Gerencial",
+                        href="/relatorio-gerencial",
+                        className="menu-item",
+                    ),
+                    dcc.Link("Lamina", href="/lamina", className="menu-item"),
+                    dcc.Link(
+                        "Enquadramento - IPS",
+                        href="/enquadramento-ips",
+                        className="menu-item",
+                    ),
+                    dcc.Link("Sair", href="/login", className="menu-item"),
+                ],
+                className="menu-container",
+            ),
+        ]),
+        html.Div(id="page-content", className="content expanded"),  # Conteúdo dinâmico
         footer,  # Rodapé fixo
     ],
 )
 
+# Callback para alternar a sidebar entre expandida e colapsada
+@app.callback(
+    [Output("sidebar", "className"), Output("page-content", "className")],
+    [Input("menu-toggle", "n_clicks")],
+    [State("sidebar", "className"), State("page-content", "className")],
+)
+def toggle_sidebar(n_clicks, sidebar_class, content_class):
+    if n_clicks and "expanded" in sidebar_class:
+        return "sidebar collapsed", "content collapsed"
+    else:
+        return "sidebar expanded", "content expanded"
 
 # Página de login com autenticação
 @app.callback(
