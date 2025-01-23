@@ -398,37 +398,28 @@ clientes_ativos_page = html.Div(
 )
 
 @app.callback(
-    Output("clientes-table", "data"),
-    [
-        Input("update-data-btn", "n_clicks"),
-        Input("search-bar-clientes", "value"),
-        Input("filter-column-clientes", "value"),
-    ],
+    Output("relatorio-table", "data"),
+    [Input("search-bar", "value"), Input("filter-column", "value")]
 )
-def update_clientes_table(n_clicks, search_value, filter_column):
-    ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
+def update_relatorio_table(search_value, filter_column):
+    # Carregar os dados da API
+    df_api = fetch_comdinheiro_data()
+    filtered_df = df_api.copy()
 
-    # Recarregar dados do PostgreSQL
-    df_postgres = fetch_data(tipo="postgres")
-
-    filtered_df = df_postgres.copy()
-
-    # Filtrar por valor da busca
+    # Filtrar por valor da busca (global)
     if search_value:
         filtered_df = filtered_df[
             filtered_df.apply(
-                lambda row: row.astype(str)
-                .str.contains(search_value, case=False)
-                .any(),
+                lambda row: search_value.lower() in row.astype(str).str.lower().to_string(),
                 axis=1,
             )
         ]
 
     # Filtrar por coluna específica
     if filter_column and filter_column != "all":
-        filtered_df = filtered_df[[filter_column]]
+        filtered_df = filtered_df[filtered_df[filter_column].str.contains(search_value, case=False, na=False)]
 
+    # Retorna os dados filtrados como uma lista de dicionários
     return filtered_df.to_dict("records")
 
 # Página de clientes
@@ -440,7 +431,8 @@ tabela_clientes_page = html.Div(
                 dcc.Input(
                     id="search-bar-clientes",
                     type="text",
-                    placeholder="Buscar...",
+                    placeholder="Buscar em todas as colunas...",
+                    debounce=True,  # Atualiza somente após o término da digitação
                     style={
                         "marginBottom": "10px",
                         "width": "50%",
@@ -465,7 +457,12 @@ tabela_clientes_page = html.Div(
                         {"label": "Código Finacap", "value": "codigo_finacap"},
                     ],
                     placeholder="Filtrar por coluna...",
-                    style={"marginBottom": "10px", "width": "50%"},
+                    style={
+                        "marginBottom": "10px",
+                        "width": "50%",
+                        "padding": "5px",
+                        "fontSize": "14px",
+                    },
                 ),
             ],
             style={"display": "flex", "justifyContent": "space-between"},
@@ -474,16 +471,18 @@ tabela_clientes_page = html.Div(
             id="clientes-table",
             columns=[{"name": col, "id": col} for col in df_postgres.columns],
             data=df_postgres.to_dict("records"),
-            style_table={"overflowX": "auto"},
+            style_table={"overflowX": "auto", "maxHeight": "500px"},
             style_header={
                 "backgroundColor": "#1b51b1",
                 "color": "white",
                 "fontWeight": "bold",
             },
             style_cell={"textAlign": "center", "padding": "10px"},
+            page_size=10,  # Paginação com 10 linhas por página
         ),
     ]
 )
+
 
 lamina_page = html.Div(
     [
@@ -557,15 +556,6 @@ def display_client_details(codigo_finacap):
             return html.Div("Cliente não encontrado. Verifique o código e tente novamente.", style={"color": "red"})
     return html.Div("Digite um código para buscar os detalhes do cliente.", style={"color": "white"})
 
-# Callbacks para atualizar as tabelas e gráficos
-@app.callback(
-    Output("relatorio-table", "data"),
-    [
-        Input("update-data-btn", "n_clicks"),
-        Input("search-bar", "value"),
-        Input("filter-column", "value"),
-    ],
-)
 
 def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     print("Atualizando Relatório Gerencial...")
