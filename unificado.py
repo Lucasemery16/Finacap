@@ -486,76 +486,170 @@ tabela_clientes_page = html.Div(
 
 lamina_page = html.Div(
     [
-        html.H3("Digite o Código Finacap do Cliente", className="page-title"),
+        html.H3(
+            "Digite o Código Finacap do Cliente",
+            className="page-title",
+            style={
+                "color": "#ffffff",
+                "fontWeight": "bold",
+                "textAlign": "center",
+                "marginBottom": "20px",
+                "fontSize": "24px",
+            },
+        ),
         
-        # Barra de pesquisa para o código_finacap
+        # Input estilizado
         dcc.Input(
             id="codigo-finacap-input",
             type="text",
             placeholder="Digite o Código Finacap...",
-            style={"marginBottom": "10px", "width": "50%", "padding": "5px", "fontSize": "14px"},
+            style={
+                "marginBottom": "20px",
+                "width": "80%",
+                "padding": "10px",
+                "fontSize": "18px",
+                "borderRadius": "10px",
+                "border": "1px solid #00aaff",
+                "display": "block",
+                "margin": "0 auto",
+                "backgroundColor": "#ffffff",
+                "color": "#000000",
+                "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
+            },
         ),
         
-        # Seção para mostrar os detalhes do cliente
-        html.Div(id="client-detail-info", style={"marginTop": "20px"}),
-    ]
+        # Detalhes do cliente
+        html.Div(
+            id="client-detail-info",
+            style={
+                "marginTop": "30px",
+                "color": "#ffffff",
+                "display": "grid",
+                "gridTemplateColumns": "repeat(auto-fit, minmax(300px, 1fr))",
+                "gap": "20px",
+                "padding": "20px",
+            },
+        ),
+    ],
+    style={
+        "backgroundColor": "#001f3f",
+        "padding": "20px",
+        "borderRadius": "10px",
+        "boxShadow": "0px 4px 10px rgba(0, 0, 0, 0.3)",
+    },
 )
 
-# Callback para exibir as informações detalhadas do cliente com base no código_finacap
+
 @app.callback(
     Output("client-detail-info", "children"),
     [Input("codigo-finacap-input", "value")]
 )
 def display_client_details(codigo_finacap):
     if codigo_finacap:
-        # Filtra os dados do cliente com base no código_finacap
         client_data = df_postgres[df_postgres["codigo_finacap"] == codigo_finacap]
-        
+
         if not client_data.empty:
-            # Detalhes do cliente
-            client_details = html.Div(
-                [
-                    # Dados do Cliente
-                    html.H4(f"1. DADOS - CLIENTE: {client_data['nome_cliente'].iloc[0]}", style={"color": "white"}),
-                    html.Div(f"Nome: {client_data['nome_cliente'].iloc[0]}", style={"color": "white"}),
-                    html.Div(f"Gestor: {client_data['gestor'].iloc[0]}", style={"color": "white"}),
-                    html.Div(f"Conta: {client_data['codigo_finacap'].iloc[0]}", style={"color": "white"}),
-                    html.Div(f"Perfil: {client_data['suitability_cliente'].iloc[0]}", style={"color": "white"}),
-
-                    # Carteira
-                    html.H4("2. CARTEIRA", style={"color": "white"}),
-                    html.Div(f"Patrimônio Líquido: R$ {client_data['patrimonio'].iloc[0]:.2f}", style={"color": "white"}),
-                    html.Div(f"Saldo em conta: Não disponível", style={"color": "white"}),
-
-                    # Monitoramento
-                    html.H4("3. MONITORAMENTO", style={"color": "white"}),
-                    html.Div(f"Alocação Carteira: Não disponível", style={"color": "white"}),
-                    html.Div(f"Alocação Estratégica: Não disponível", style={"color": "white"}),
-                    html.Div(f"Alocação Tática: Não disponível", style={"color": "white"}),
-                    html.Div(f"Minimo: Não disponível", style={"color": "white"}),
-                    html.Div(f"Máximo: Não disponível", style={"color": "white"}),
-
-                    # Rebalanceamento
-                    html.H4("4. REBALANCEAMENTO", style={"color": "white"}),
-                    html.Div(f"Rebalanceamento Estratégico: Não disponível", style={"color": "white"}),
-                    html.Div(f"Rebalanceamento Máximo: Não disponível", style={"color": "white"}),
-
-                    # Execução
-                    html.H4("5. EXECUÇÃO", style={"color": "white"}),
-                    html.Div(f"Mov. Ativo: Não disponível", style={"color": "white"}),
-                    html.Div(f"Mov. Caixa: Não disponível", style={"color": "white"}),
-
-                    # Total
-                    html.H4("TOTAL", style={"color": "white"}),
-                    html.Div(f"Saldo em conta após movimentações: Não disponível", style={"color": "white"}),
-
-                ]
-            )
-            return client_details
+            # Cards com conteúdo bem formatado
+            return [
+                html.Div(
+                    [
+                        html.H4("1. DADOS DO CLIENTE", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P(f"Nome: {client_data['nome_cliente'].iloc[0]}"),
+                        html.P(f"Gestor: {client_data['gestor'].iloc[0]}"),
+                        html.P(f"Conta: {client_data['codigo_finacap'].iloc[0]}"),
+                        html.P(f"Perfil: {client_data['suitability_cliente'].iloc[0]}"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H4("2. CARTEIRA", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P(f"Patrimônio Líquido: R$ {client_data['patrimonio'].iloc[0]:,.2f}"),
+                        html.P("Saldo em conta: Não disponível"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H4("3. MONITORAMENTO", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P("Alocação Carteira: Não disponível"),
+                        html.P("Alocação Estratégica: Não disponível"),
+                        html.P("Alocação Tática: Não disponível"),
+                        html.P("Mínimo: Não disponível"),
+                        html.P("Máximo: Não disponível"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H4("4. REBALANCEAMENTO", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P("Rebalanceamento Estratégico: Não disponível"),
+                        html.P("Rebalanceamento Máximo: Não disponível"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H4("5. EXECUÇÃO", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P("Mov. Ativo: Não disponível"),
+                        html.P("Mov. Caixa: Não disponível"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H4("TOTAL", style={"marginBottom": "10px", "color": "#00aaff"}),
+                        html.P("Saldo em conta após movimentações: Não disponível"),
+                    ],
+                    style={
+                        "backgroundColor": "#ffffff",
+                        "color": "#001f3f",
+                        "padding": "20px",
+                        "borderRadius": "10px",
+                        "boxShadow": "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                    },
+                ),
+            ]
         else:
-            return html.Div("Cliente não encontrado. Verifique o código e tente novamente.", style={"color": "red"})
-    return html.Div("Digite um código para buscar os detalhes do cliente.", style={"color": "white"})
+            return html.Div(
+                "Cliente não encontrado. Verifique o código e tente novamente.",
+                style={"color": "red", "textAlign": "center", "fontWeight": "bold"},
+            )
 
+    return html.Div(
+        "Digite um código para buscar os detalhes do cliente.",
+        style={"color": "#ffffff", "textAlign": "center"},
+    )
 
 def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     print("Atualizando Relatório Gerencial...")
