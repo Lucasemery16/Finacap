@@ -302,38 +302,6 @@ relatorio_gerencial_page = html.Div(
                         "margin": "0 auto",
                     },
                 ),
-                dcc.Dropdown(
-                    id="filter-column",
-                    options=[
-                        {"label": "Todos", "value": "all"},
-                        {"label": "Carteira", "value": "Carteira"},
-                        {"label": "Ativo", "value": "Ativo"},
-                        {"label": "Descrição", "value": "Descrição"},
-                        {"label": "Saldo Bruto", "value": "Saldo Bruto"},
-                        {"label": "mv(estrategia01)", "value": "mv(estrategia01)"},
-                        {"label": "mv(estrategia02)", "value": "mv(estrategia02)"},
-                        {"label": "Data analise", "value": "Data analise"},
-                        {"label": "Tipo ativo", "value": "Tipo ativo"},
-                        {"label": "PU", "value": "PU"},
-                        {"label": "Instituicao financeira", "value": "Instituicao financeira"},
-                        {"label": "Prazo da liquidez", "value": "Prazo da liquidez"},
-                        {"label": "minha_variavel(serie_moeda)", "value": "minha_variavel(serie_moeda)"},
-                    ],
-                    placeholder="Filtrar por coluna...",
-                    style={
-                        "marginBottom": "10px",
-                        "width": "50%",
-                        "padding": "10px",
-                        "fontSize": "16px",
-                        "borderRadius": "10px",
-                        "border": "1px solid #00aaff",
-                        "backgroundColor": "#ffffff",
-                        "color": "#000000",
-                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
-                        "display": "block",
-                        "margin": "0 auto",
-                    },
-                ),
             ],
             style={"textAlign": "center"},
         ),
@@ -364,7 +332,6 @@ relatorio_gerencial_page = html.Div(
         ),
     ]
 )
-
 
 
 # Página de clientes
@@ -418,27 +385,50 @@ clientes_ativos_page = html.Div(
 
 @app.callback(
     Output("relatorio-table", "data"),
-    [Input("search-bar", "value"), Input("filter-column", "value")]
+    [Input("search-bar", "value")]
 )
-def update_relatorio_table(search_value, filter_column):
-    # Carregar os dados da API
-    df_api = fetch_comdinheiro_data()
+def update_relatorio_table(search_value):
+    # Cópia do DataFrame original
     filtered_df = df_api.copy()
 
-    # Filtrar por valor da busca (global)
     if search_value:
+        # Busca global em todas as colunas
         filtered_df = filtered_df[
             filtered_df.apply(
                 lambda row: search_value.lower() in row.astype(str).str.lower().to_string(),
-                axis=1,
+                axis=1
             )
         ]
+
+    # Retorna os dados filtrados
+    return filtered_df.to_dict("records")
+
 
     # Filtrar por coluna específica
     if filter_column and filter_column != "all":
         filtered_df = filtered_df[filtered_df[filter_column].str.contains(search_value, case=False, na=False)]
 
     # Retorna os dados filtrados como uma lista de dicionários
+    return filtered_df.to_dict("records")
+
+@app.callback(
+    Output("clientes-table", "data"),
+    [Input("search-bar-clientes", "value")]
+)
+def update_clientes_table(search_value):
+    # Cópia do DataFrame original
+    filtered_df = df_postgres.copy()
+
+    if search_value:
+        # Busca global em todas as colunas
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: search_value.lower() in row.astype(str).str.lower().to_string(),
+                axis=1
+            )
+        ]
+
+    # Retorna os dados filtrados
     return filtered_df.to_dict("records")
 
 # Página de clientes
@@ -466,37 +456,6 @@ tabela_clientes_page = html.Div(
                         "margin": "0 auto",
                     },
                 ),
-                dcc.Dropdown(
-                    id="filter-column-clientes",
-                    options=[
-                        {"label": "Todos", "value": "all"},
-                        {"label": "Nome Cliente", "value": "nome_cliente"},
-                        {"label": "Patrimônio", "value": "patrimonio"},
-                        {"label": "Gestor", "value": "gestor"},
-                        {"label": "Cliente Ativo", "value": "cliente_ativo"},
-                        {
-                            "label": "Suitability Cliente",
-                            "value": "suitability_cliente",
-                        },
-                        {"label": "Perfil Risco IPS", "value": "perfil_risco_ips"},
-                        {"label": "Tipo IPS", "value": "tipo_ips"},
-                        {"label": "Código Finacap", "value": "codigo_finacap"},
-                    ],
-                    placeholder="Filtrar por coluna...",
-                    style={
-                        "marginBottom": "10px",
-                        "width": "50%",
-                        "padding": "10px",
-                        "fontSize": "16px",
-                        "borderRadius": "10px",
-                        "border": "1px solid #00aaff",
-                        "backgroundColor": "#ffffff",
-                        "color": "#000000",
-                        "boxShadow": "0px 4px 8px rgba(0, 0, 0, 0.2)",
-                        "display": "block",
-                        "margin": "0 auto",
-                    },
-                ),
             ],
             style={"textAlign": "center"},
         ),
@@ -515,6 +474,7 @@ tabela_clientes_page = html.Div(
         ),
     ]
 )
+
 
 
 
