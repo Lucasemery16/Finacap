@@ -76,7 +76,6 @@ def fetch_comdinheiro_data():
                     "Instituicao financeira": value.get("col9", "Não disponível"),
                     "Prazo da liquidez": value.get("col10", "Não disponível"),
                     "minha_variavel(serie_moeda)": value.get("col11", "Não disponível"),
-
                 }
                 data_list.append(record)
 
@@ -90,6 +89,7 @@ def fetch_comdinheiro_data():
     except KeyError as e:
         print(f"Erro no formato da resposta: {e}")
         return pd.DataFrame()
+
 
 # Função para combinar os dados de ambas as fontes
 def fetch_data(tipo="postgres"):
@@ -220,26 +220,13 @@ dashboard_layout = html.Div(
             html.Hr(),
             html.Div(
                 [
-                    dcc.Link(
-                        "Clientes Ativos", href="/clientes-ativos", className="menu-item"
-                    ),
+                    dcc.Link("Clientes Ativos", href="/clientes-ativos", className="menu-item"),
                     dcc.Link("Clientes", href="/clientes", className="menu-item"),
-                    dcc.Link(
-                        "Revisões Pendentes",
-                        href="/revisoes-pendentes",
-                        className="menu-item",
-                    ),
-                    dcc.Link(
-                        "Relatório Gerencial",
-                        href="/relatorio-gerencial",
-                        className="menu-item",
-                    ),
+                    dcc.Link("Revisões Pendentes",href="/revisoes-pendentes",className="menu-item",),
+                    dcc.Link("Relatório Gerencial",href="/relatorio-gerencial",className="menu-item",),
                     dcc.Link("Lamina", href="/lamina", className="menu-item"),
-                    dcc.Link(
-                        "Enquadramento - IPS",
-                        href="/enquadramento-ips",
-                        className="menu-item",
-                    ),
+                    dcc.Link( "Enquadramento - IPS",href="/enquadramento-ips",className="menu-item", ),
+                    dcc.Link( "Enquadramento - IPS Novo", href="/enquadramento-ips-novo", className="menu-item"),
                     dcc.Link("Sair", href="/login", className="menu-item"),
                 ],
                 className="menu-container",
@@ -798,6 +785,80 @@ def update_enquadramento_ips(n_clicks):
     # Retornar os dados para exibição na tabela
     return resultados_df.to_dict("records")
 
+percentuais_enquadramento = {
+    'U': {'Renda Fixa Curta Duração': 0.85, 'Renda Fixa Média/Longa Duração': 0.10, 'Renda Variável': 0.05, 'Alternativo': 0.10},
+    'C': {'Renda Fixa Curta Duração': 0.70, 'Renda Fixa Média/Longa Duração': 0.15, 'Renda Variável': 0.15, 'Alternativo': 0.10},
+    'M': {'Renda Fixa Curta Duração': 0.45, 'Renda Fixa Média/Longa Duração': 0.15, 'Renda Variável': 0.30, 'Alternativo': 0.10},
+    'S': {'Renda Fixa Curta Duração': 0.20, 'Renda Fixa Média/Longa Duração': 0.30, 'Renda Variável': 0.40, 'Alternativo': 0.10},
+    'A': {'Renda Fixa Curta Duração': 0.10, 'Renda Fixa Média/Longa Duração': 0.30, 'Renda Variável': 0.50, 'Alternativo': 0.10}
+}
+
+# Função para exibir os resultados na tabela com os percentuais fixos ips novo 
+def calcular_enquadramento_por_tipo(carteira_data, tipo, perfil_ips):
+    # Obter o percentual de alocação com base no perfil da carteira
+    percentual = percentuais_enquadramento[perfil_ips][tipo]
+
+    # Calcular o total de patrimônio da carteira
+    patrimonio_total = carteira_data['Saldo Bruto'].sum()
+
+    # Calcular o valor baseado no percentual
+    valor_enquadramento = patrimonio_total * percentual
+
+    return valor_enquadramento
+
+# Função de callback para exibir os resultados na tabela
+def update_enquadramento_ips_novo():
+    # Obter os dados da API
+    df_api = fetch_comdinheiro_data()
+
+    if df_api.empty:
+        return []  # Retorna uma lista vazia se não houver dados
+
+    # Limpeza e processamento de dados
+    df_api['Saldo Bruto'] = df_api['Saldo Bruto'].astype(str).replace('[R$\s]', '', regex=True).str.replace('.', '').str.replace(',', '.').astype(float)
+    df_api['moeda'] = df_api['minha_variavel(serie_moeda)'].fillna('real').str.lower().str.strip()
+    df_api['moeda'] = df_api['moeda'].replace('nd', 'real')  # Considerar 'nd' como 'real'
+    df_api.loc[df_api['moeda'] == 'usd', 'Saldo Bruto'] *= 6.20  # Conversão de USD para reais
+    df_api['moeda'] = 'real'
+
+    # Calcular os diferentes tipos de alocação para as carteiras
+    carteiras = df_api['Carteira'].unique()
+    resultados = []
+
+    for carteira in carteiras:
+        carteira_data = df_api[df_api['Carteira'] == carteira]
+        perfil_ips = carteira_data['Carteira'].iloc[0]  # Perfil da carteira (U, C, M, S, A)
+
+        # Calculando os valores de cada tipo de alocação
+        renda_fixa_curta = calcular_enquadramento_por_tipo(carteira_data, 'Renda Fixa Curta Duração', perfil_ips)
+        renda_fixa_media = calcular_enquadramento_por_tipo(carteira_data, 'Renda Fixa Média/Longa Duração', perfil_ips)
+        renda_variavel = calcular_enquadramento_por_tipo(carteira_data, 'Renda Variável', perfil_ips)
+        alternativo = calcular_enquadramento_por_tipo(carteira_data, 'Alternativo', perfil_ips)
+
+        resultado = {
+            'Perfil-IPS': perfil_ips,
+            'Patrimônio Líquido': f"R$ {carteira_data['Saldo Bruto'].sum():,.2f}",
+            'Renda Fixa Curta Duração': f"{renda_fixa_curta:,.2f}",
+            'Alocação Estratégica Renda Fixa Curta Duração': f"{percentuais_enquadramento[perfil_ips]['Renda Fixa Curta Duração'] * 100:.2f}%",
+            'Renda Fixa Média/Longa Duração': f"{renda_fixa_media:,.2f}",
+            'Alocação Estratégica Renda Fixa Média/Longa Duração': f"{percentuais_enquadramento[perfil_ips]['Renda Fixa Média/Longa Duração'] * 100:.2f}%",
+            'Renda Variável': f"{renda_variavel:,.2f}",
+            'Alocação Estratégica Renda Variável': f"{percentuais_enquadramento[perfil_ips]['Renda Variável'] * 100:.2f}%",
+            'Alternativo': f"{alternativo:,.2f}",
+            'Alocação Estratégica Alternativo': f"{percentuais_enquadramento[perfil_ips]['Alternativo'] * 100:.2f}%",
+            'Status': "Ativo",  # Status fixo ou calculado conforme sua lógica
+            'Exposição CP': carteira_data['Saldo Bruto'].sum(),  # Exposição total de cada carteira
+            'Liquidez imediata': "Sim",  # Sim ou Não dependendo da lógica
+            'Custódia internacional': "Não",  # Custódia, dependendo de outros dados
+            'Status (OK/NÃO)': "OK",  # Status OK ou Não, de acordo com a lógica
+        }
+        resultados.append(resultado)
+
+    # Criar um DataFrame com os resultados
+    resultados_df = pd.DataFrame(resultados)
+
+    # Retornar os dados para exibição na tabela
+    return resultados_df.to_dict("records")
 
 # Página de Enquadramento - IPS
 enquadramento_ips_page = html.Div(
@@ -838,6 +899,42 @@ enquadramento_ips_page = html.Div(
     ]
 )
 
+enquadramento_ips_novo_page = html.Div(
+    [
+        html.H3("Enquadramento - IPS Novo", className="page-title"),
+        dt.DataTable(
+            id="enquadramento-ips-novo-table",
+            columns=[
+                {"name": "Perfil-IPS", "id": "Perfil-IPS"},
+                {"name": "Patrimônio Líquido", "id": "Patrimônio Líquido"},
+                {"name": "Renda Fixa Curta Duração", "id": "Renda Fixa Curta Duração"},
+                {"name": "Alocação Estratégica Renda Fixa Curta Duração", "id": "Alocação Estratégica Renda Fixa Curta Duração"},
+                {"name": "Renda Fixa Média/Longa Duração", "id": "Renda Fixa Média/Longa Duração"},
+                {"name": "Alocação Estratégica Renda Fixa Média/Longa Duração", "id": "Alocação Estratégica Renda Fixa Média/Longa Duração"},
+                {"name": "Renda Variável", "id": "Renda Variável"},
+                {"name": "Alocação Estratégica Renda Variável", "id": "Alocação Estratégica Renda Variável"},
+                {"name": "Alternativo", "id": "Alternativo"},
+                {"name": "Alocação Estratégica Alternativo", "id": "Alocação Estratégica Alternativo"},
+                {"name": "Status", "id": "Status"},
+                {"name": "Exposição CP", "id": "Exposição CP"},
+                {"name": "Liquidez imediata", "id": "Liquidez imediata"},
+                {"name": "Custódia internacional", "id": "Custódia internacional"},
+                {"name": "Status (OK/NÃO)", "id": "Status (OK/NÃO)"},
+            ],
+            data=[],  # Inicialmente vazio, os dados serão carregados na função de callback
+            style_table={"overflowX": "auto"},
+            style_header={
+                "backgroundColor": "#1b51b1",
+                "color": "white",
+                "fontWeight": "bold",
+                "textAlign": "center",
+            },
+            style_cell={"textAlign": "center", "padding": "5px"},
+        ),
+    ]
+)
+
+
 
 @app.callback(
     Output("page-content", "children"),
@@ -854,10 +951,13 @@ def display_page(pathname):
         return lamina_page
     elif pathname == "/enquadramento-ips":
         return enquadramento_ips_page
+    elif pathname == "/enquadramento-ips-novo":
+        return enquadramento_ips_novo_page  # Página nova
     elif pathname == "/login":
-        return auth_layout  # Quando a URL for "/login", retorna o layout de login
+        return auth_layout
     else:
         return html.Div([html.H3("Página não encontrada!!", className="error-message")])
+
 
 # Callback para alternar visibilidade do campo de senha
 @app.callback(
