@@ -25,7 +25,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="@QWEasd132",
+        password="Nautico1901",
         host="localhost",
         port="5432",
     )
@@ -678,6 +678,166 @@ def update_relatorio_gerencial_data(n_clicks, search_value, filter_column):
     return filtered_df.to_dict("records")
 
 
+# Ajuste para garantir que a tabela receba os dados corretamente
+@app.callback(
+    Output("enquadramento-ips-table", "data"),
+    [Input("update-data-btn", "n_clicks")]
+)
+def update_enquadramento_ips(n_clicks):
+    # Obter dados da API
+    df_api = fetch_comdinheiro_data()
+
+    if df_api.empty:
+        return []  # Retorna uma lista vazia se não houver dados
+
+    # Limpeza e processamento de dados
+    df_api['Saldo Bruto'] = df_api['Saldo Bruto'].astype(str).replace('[R$\s]', '', regex=True).str.replace('.', '').str.replace(',', '.').astype(float)
+    df_api['moeda'] = df_api['minha_variavel(serie_moeda)'].fillna('real').str.lower().str.strip()
+    df_api['moeda'] = df_api['moeda'].replace('nd', 'real')  # Considerar 'nd' como 'real'
+    df_api.loc[df_api['moeda'] == 'usd', 'Saldo Bruto'] *= 6.20  # Conversão de USD para reais
+    df_api['moeda'] = 'real'
+
+    # Definir as carteiras e suas respectivas alocações
+    carteira_alocacao = {
+        'U': {
+            'Selic': 0.35, 'Crédito Privado Pós': 0.50, 'IPCA/Pré Fixado': 0.10, 
+            'Renda Variável': 0.05, 'Offshore': 0.00, 'Alternativo': 0.00
+        },
+        'C': {
+            'Selic': 0.30, 'Crédito Privado Pós': 0.40, 'IPCA/Pré Fixado': 0.15,
+            'Renda Variável': 0.15, 'Offshore': 0.00, 'Alternativo': 0.00
+        },
+        'M': {
+            'Selic': 0.20, 'Crédito Privado Pós': 0.25, 'IPCA/Pré Fixado': 0.15,
+            'Renda Variável': 0.30, 'Offshore': 0.05, 'Alternativo': 0.05
+        },
+        'S': {
+            'Selic': 0.10, 'Crédito Privado Pós': 0.10, 'IPCA/Pré Fixado': 0.30,
+            'Renda Variável': 0.40, 'Offshore': 0.05, 'Alternativo': 0.05
+        },
+        'A': {
+            'Selic': 0.05, 'Crédito Privado Pós': 0.05, 'IPCA/Pré Fixado': 0.30,
+            'Renda Variável': 0.50, 'Offshore': 0.05, 'Alternativo': 0.05
+        }
+    }
+
+    # Definir os clientes em cada lógica
+    clientes_lógicas = {
+        'A': ['FINACAP044'],
+        'C': ['FINACAP027', 'FINACAP026', 'FINACAP045', 'FINACAP050', 'FINACAP052', 'FINACAP016', 'FINACAP012', 'FINACAP088', 'FINACAP101', 'FINACAP094', 'FINACAP109', 'FINACAP114'],
+        'M': ['FINACAP039', 'FINACAP003', 'FINACAP010', 'FINACAP019', 'FINACAP005', 'FINACAP007', 'FINACAP086', 'FINACAP087'],
+        'S': ['FINACAP031', 'FINACAP020', 'FINACAP032', 'FINACAP051', 'FINACAP048', 'FINACAP049', 'FINACAP057', 'FINACAP061', 'FINACAP075'],
+        'U': ['FINACAP031', 'FINACAP020', 'FINACAP032', 'FINACAP051', 'FINACAP048', 'FINACAP049', 'FINACAP057', 'FINACAP061', 'FINACAP075']
+    }
+
+    # Função para calcular o enquadramento de cada carteira individualmente
+    def calcular_enquadramento_individual(carteira_data, tipo, tipo_carteira):
+        cnpj_especial = '19.038.997/0001-05'  # CNPJ sem a barra e os pontos
+        alocacao_fim = carteira_data[carteira_data['Ativo'] == cnpj_especial]
+
+        soma_fim = 0
+        if not alocacao_fim.empty:
+            patrimonio_fim = alocacao_fim['Saldo Bruto'].sum()
+
+            if tipo == 'Selic':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['Selic']
+            elif tipo == 'Crédito Privado Pós':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['Crédito Privado Pós']
+            elif tipo == 'IPCA/Pré Fixado':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['IPCA/Pré Fixado']
+            elif tipo == 'Renda Variável':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['Renda Variável']
+            elif tipo == 'Offshore':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['Offshore']
+            elif tipo == 'Alternativo':
+                soma_fim = patrimonio_fim * carteira_alocacao[tipo_carteira]['Alternativo']
+
+        soma_tipo = carteira_data[carteira_data['minha_variavel(estrategia01)'].str.contains(tipo, case=False, na=False)]['Saldo Bruto'].sum()
+
+        total = soma_tipo + soma_fim
+        patrimonio_total = carteira_data['Saldo Bruto'].sum()
+
+        if total > patrimonio_total:
+            total = patrimonio_total
+
+        return (total / patrimonio_total) * 100 if patrimonio_total > 0 else 0
+
+    # Calcular os diferentes tipos de alocação para as carteiras definidas
+    resultados = []
+
+    for carteira in carteira_alocacao.keys():
+        clientes_na_carteira = clientes_lógicas[carteira]  # Obter os clientes dessa lógica
+        carteira_data = df_api[df_api['Carteira'].isin(clientes_na_carteira)]
+
+        if not carteira_data.empty:
+            resultado = {
+                'Perfil - IPS': carteira,
+                'Patrimônio Líquido': carteira_data['Saldo Bruto'].sum(),
+                'Selic': f"{calcular_enquadramento_individual(carteira_data, 'Selic', carteira):.2f}%",
+                'Alocação Estratégica Selic': f"{carteira_alocacao[carteira]['Selic'] * 100:.2f}%",
+                'Crédito Privado Pós': f"{calcular_enquadramento_individual(carteira_data, 'Crédito Privado Pós', carteira):.2f}%",
+                'Alocação Estratégica Crédito Privado Pós': f"{carteira_alocacao[carteira]['Crédito Privado Pós'] * 100:.2f}%",
+                'IPCA/Pré Fixado': f"{calcular_enquadramento_individual(carteira_data, 'IPCA/Pré Fixado', carteira):.2f}%",
+                'Alocação Estratégica IPCA/Pré Fixado': f"{carteira_alocacao[carteira]['IPCA/Pré Fixado'] * 100:.2f}%",
+                'Renda Variável': f"{calcular_enquadramento_individual(carteira_data, 'Renda Variável', carteira):.2f}%",
+                'Alocação Estratégica Renda Variável': f"{carteira_alocacao[carteira]['Renda Variável'] * 100:.2f}%",
+                'Offshore': f"{calcular_enquadramento_individual(carteira_data, 'Offshore', carteira):.2f}%",
+                'Alocação Estratégica Offshore': f"{carteira_alocacao[carteira]['Offshore'] * 100:.2f}%",
+                'Alternativo': f"{calcular_enquadramento_individual(carteira_data, 'Alternativo', carteira):.2f}%",
+                'Alocação Estratégica Alternativo': f"{carteira_alocacao[carteira]['Alternativo'] * 100:.2f}%",
+                'Status (OK/NÃO)': 'OK',  # Aqui você pode aplicar uma lógica de status, caso necessário
+                'Exposição CP': carteira_data['Exposição CP'].sum(),
+                'Liquidez imediata': 'Sim',
+                'Período (dias)': 30
+            }
+            resultados.append(resultado)
+
+    # Criar um DataFrame com os resultados
+    resultados_df = pd.DataFrame(resultados)
+
+    # Retornar os dados para exibição na tabela
+    return resultados_df.to_dict("records")
+
+
+# Página de Enquadramento - IPS
+enquadramento_ips_page = html.Div(
+    [
+        html.H3("Enquadramento - IPS", className="page-title"),
+        dt.DataTable(
+            id="enquadramento-ips-table",
+            columns=[
+                {"name": "Perfil - IPS", "id": "Perfil - IPS"},
+                {"name": "Patrimônio Líquido", "id": "Patrimônio Líquido"},
+                {"name": "Selic", "id": "Selic"},
+                {"name": "Alocação Estratégica Selic", "id": "Alocação Estratégica Selic"},
+                {"name": "Crédito Privado Pós", "id": "Crédito Privado Pós"},
+                {"name": "Alocação Estratégica Crédito Privado Pós", "id": "Alocação Estratégica Crédito Privado Pós"},
+                {"name": "IPCA/Pré Fixado", "id": "IPCA/Pré Fixado"},
+                {"name": "Alocação Estratégica IPCA/Pré Fixado", "id": "Alocação Estratégica IPCA/Pré Fixado"},
+                {"name": "Renda Variável", "id": "Renda Variável"},
+                {"name": "Alocação Estratégica Renda Variável", "id": "Alocação Estratégica Renda Variável"},
+                {"name": "Offshore", "id": "Offshore"},
+                {"name": "Alocação Estratégica Offshore", "id": "Alocação Estratégica Offshore"},
+                {"name": "Alternativo", "id": "Alternativo"},
+                {"name": "Alocação Estratégica Alternativo", "id": "Alocação Estratégica Alternativo"},
+                {"name": "Status (OK/NÃO)", "id": "Status (OK/NÃO)"},
+                {"name": "Exposição CP", "id": "Exposição CP"},
+                {"name": "Liquidez imediata", "id": "Liquidez imediata"},
+                {"name": "Período (dias)", "id": "Período (dias)"}
+            ],
+            data=[],  # Inicialmente vazio
+            style_table={"overflowX": "auto"},
+            style_header={
+                "backgroundColor": "#1b51b1",
+                "color": "white",
+                "fontWeight": "bold",
+                "textAlign": "center",
+            },
+            style_cell={"textAlign": "center", "padding": "5px"},
+        ),
+    ]
+)
+
 
 @app.callback(
     Output("page-content", "children"),
@@ -717,74 +877,6 @@ app.layout = html.Div(
         dcc.Location(id="auth-url", refresh=False),
         dcc.Location(id="url", refresh=False),
         html.Div(id="auth-page-content", children=auth_layout),
-    ]
-)
-
-# Layout da página Enquadramento - IPS
-enquadramento_ips_page = html.Div(
-    [
-        html.H3("Enquadramento - IPS", className="page-title"),
-        html.Div(
-            [
-                html.P(
-                    "Conteúdo específico relacionado ao enquadramento IPS será exibido aqui.",
-                    style={"fontSize": "16px"},
-                ),
-                # Você pode adicionar mais componentes aqui conforme necessário
-            ],
-            className="content-container",
-        ),
-    ]
-)
-
-# Layout da página Enquadramento - IPS
-enquadramento_ips_page = html.Div(
-    [
-        html.H3("Enquadramento - IPS", className="page-title"),
-        dt.DataTable(
-            id="enquadramento-ips-table",
-            columns=[
-                {"name": ["", "Cliente"], "id": "Cliente"},
-                {"name": ["", "Responsável"], "id": "Responsavel"},
-                {"name": ["", "Patrimônio Líquido"], "id": "Patrimonio_Liquido"},
-                {"name": ["Selic", "Atual"], "id": "Selic_Atual"},
-                {"name": ["Selic", "Estratégica"], "id": "Selic_Estrategica"},
-                {"name": ["Crédito Privado Pós", "Atual"], "id": "Credito_Privado_Pos_Atual"},
-                {"name": ["Crédito Privado Pós", "Estratégica"], "id": "Credito_Privado_Pos_Estrategica"},
-                {"name": ["IPCA/Pré Fixado", "Atual"], "id": "IPCA_Pre_Atual"},
-                {"name": ["IPCA/Pré Fixado", "Estratégica"], "id": "IPCA_Pre_Estrategico"},
-                {"name": ["Renda Variável", "Atual"], "id": "Renda_Variavel_Atual"},
-                {"name": ["Renda Variável", "Estratégica"], "id": "Renda_Variavel_Estrategico"},
-                {"name": ["Offshore", "Atual"], "id": "Offshore_Atual"},
-                {"name": ["Offshore", "Estratégica"], "id": "Offshore_Estrategico"},
-                {"name": ["Alternativo", "Atual"], "id": "Alternativo_Atual"},
-                {"name": ["Alternativo", "Estratégica"], "id": "Alternativo_Estrategico"},
-                {"name": ["", "OK/NA"], "id": "OK_NA"},
-                {"name": ["", "CP"], "id": "CP"},
-                {"name": ["", "Imediato"], "id": "Imediato"},
-                {"name": ["", "(dias)"], "id": "Dias"},
-            ],
-            data=[
-                # Dados fictícios para teste
-                {
-                    "Cliente": "Exemplo 1", "Responsavel": "Responsável 1", "Patrimonio_Liquido": 1000000,
-                    "Selic_Atual": 10, "Selic_Estrategica": 15, "Credito_Privado_Pos_Atual": 20,
-                    "Credito_Privado_Pos_Estrategica": 25, "IPCA_Pre_Atual": 30, "IPCA_Pre_Estrategico": 35,
-                    "Renda_Variavel_Atual": 40, "Renda_Variavel_Estrategico": 45, "Offshore_Atual": 50,
-                    "Offshore_Estrategico": 55, "Alternativo_Atual": 60, "Alternativo_Estrategico": 65,
-                    "OK_NA": "OK", "CP": 5, "Imediato": "Sim", "Dias": 30
-                },
-            ],
-            merge_duplicate_headers=True,  # Habilita cabeçalhos agrupados
-            style_table={"overflowX": "auto"},
-            style_header={
-                "backgroundColor": "#1b51b1",
-                "color": "white",
-                "fontWeight": "bold",
-                "textAlign": "center",
-            },
-            style_cell={"textAlign": "center", "padding": "5px"},
-        ),
     ]
 )
 
