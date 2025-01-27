@@ -25,7 +25,7 @@ def fetch_postgres_data():
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
-        password="Nautico1901",
+        password="@QWEasd132",
         host="localhost",
         port="5432",
     )
@@ -67,7 +67,7 @@ def fetch_comdinheiro_data():
                     "Carteira": value.get("col0", "Não disponível"),
                     "Ativo": value.get("col1", "Não disponível"),
                     "Descrição": value.get("col2", "Não disponível"),
-                    "Saldo Bruto": value.get("col3", "Não disponível"),
+                    "Saldo Bruto": value.get("col3", "0"),
                     "mv(estrategia01)": value.get("col4", "Não disponível"),
                     "mv(estrategia02)": value.get("col5", "Não disponível"),
                     "Data analise": value.get("col6", "Não disponível"),
@@ -80,6 +80,10 @@ def fetch_comdinheiro_data():
                 data_list.append(record)
 
             df_api = pd.DataFrame(data_list)
+
+            # Converter a coluna "Saldo Bruto" para numérico
+            df_api["Saldo Bruto"] = pd.to_numeric(df_api["Saldo Bruto"], errors="coerce")
+
             return df_api
         else:
             return pd.DataFrame()
@@ -89,6 +93,7 @@ def fetch_comdinheiro_data():
     except KeyError as e:
         print(f"Erro no formato da resposta: {e}")
         return pd.DataFrame()
+
 
 
 # Função para combinar os dados de ambas as fontes
@@ -712,25 +717,36 @@ enquadramento_ips_page = html.Div(
     Input("update-enquadramento-btn", "n_clicks")
 )
 def update_enquadramento_ips_table(n_clicks):
-    print("Atualizando IPS...")
-    ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
-
-    # Usar dados da API para a tabela de Relatório Gerencial
+    # Buscar os dados da API
     df_api = fetch_comdinheiro_data()
 
-    print("Dados carregados para Relatório Gerencial:")
-    print(df_api.head())
-
     if df_api.empty:
-        return []  # Retorna uma lista vazia se não houver dados
+        return []  # Retorna uma tabela vazia se não houver dados
 
-    # Garantir que os dados estejam sendo enviados corretamente
-    filtered_df = df_api.copy()
+    # Filtrar apenas carteiras únicas
+    carteiras_unicas = df_api["Carteira"].unique()
 
-    return filtered_df.to_dict("records")
+    resultados = []
+
+    for carteira in carteiras_unicas:
+        carteira_data = df_api[df_api["Carteira"] == carteira]
+        resultado = {
+            "Carteira": carteira,
+            "SELIC": calcular_individual(carteira_data, "Selic"),
+            "Crédito Privado Pós": calcular_individual(carteira_data, "Crédito Privado Pós"),
+            "IPCA": calcular_individual(carteira_data, "IPCA"),
+            "Renda Variável": calcular_individual(carteira_data, "Renda Variável"),
+            "Offshore": calcular_individual(carteira_data, "Offshore"),
+            "Alternativo": calcular_individual(carteira_data, "Alternativo"),
+        }
+        resultados.append(resultado)
+
+    return resultados
 
 def calcular_individual(carteira_data, tipo):
+    # Garantir que a coluna "Saldo Bruto" é numérica
+    carteira_data["Saldo Bruto"] = pd.to_numeric(carteira_data["Saldo Bruto"], errors="coerce")
+
     # CNPJ especial
     cnpj_especial = '19.038.997/0001-05'
     alocacao_fim = carteira_data[carteira_data['Ativo'] == cnpj_especial]
@@ -750,7 +766,7 @@ def calcular_individual(carteira_data, tipo):
 
     # Soma do tipo de estratégia
     soma_tipo = carteira_data[
-        carteira_data['minha_variavel(estrategia01)'].str.contains(tipo, case=False, na=False)
+        carteira_data['mv(estrategia01)'].str.contains(tipo, case=False, na=False)
     ]['Saldo Bruto'].sum()
 
     # Verificar "ICATU Allocation"
@@ -765,8 +781,10 @@ def calcular_individual(carteira_data, tipo):
         elif tipo == 'Alternativo':
             soma_icatu_allocation = valor_icatu_allocation * 0.10
 
-    # Verificar "IRATE 70"
-    alocacao_icatu_70 = carteira_data[carteira_data['Ativo'] == 'FINACAP ICATU PREVIDENCIÁRIO 70 FUNDO DE INVESTIMENTO MULTIMERCADO']
+    # Verificar "ICATU 70"
+    alocacao_icatu_70 = carteira_data[
+        carteira_data['Ativo'] == 'FINACAP ICATU PREVIDENCIÁRIO 70 FUNDO DE INVESTIMENTO MULTIMERCADO'
+    ]
     soma_icatu_70 = 0
     if not alocacao_icatu_70.empty:
         valor_icatu_70 = alocacao_icatu_70['Saldo Bruto'].sum()
@@ -779,12 +797,17 @@ def calcular_individual(carteira_data, tipo):
     total = soma_tipo + soma_fim + soma_icatu_allocation + soma_icatu_70
     patrimonio_total = carteira_data['Saldo Bruto'].sum()
 
+    # Garantir que patrimônio total é válido
+    if not isinstance(patrimonio_total, (int, float)) or pd.isna(patrimonio_total):
+        patrimonio_total = 0
+
     # Ajuste para garantir que não ultrapasse 100%
-    if total > patrimonio_total:
+    if patrimonio_total > 0 and total > patrimonio_total:
         total = patrimonio_total
 
     # Calcular porcentagem final
     return (total / patrimonio_total) * 100 if patrimonio_total > 0 else 0
+
 
 
 @app.callback(
